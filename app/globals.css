@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+:root {
+    --color-primary: #58cc02;
+    --color-secondary: #ffc800;
+    --color-accent: #1cb0f6;
+    --color-background-light: #f8fafc;
+    --color-background-dark: #131f24;
+    --color-surface-light: #ffffff;
+    --color-surface-dark: #202f36;
+    --color-border-light: #e5e7eb;
+    --color-border-dark: #37464f;
+    --color-text-main-dark: #ffffff;
+    --color-text-muted-dark: #afb6b8;
+}
+
+@layer base {
+    body {
+        font-family: "Inter", system-ui, sans-serif;
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    html, body {
+        height: 100%;
+        overflow: hidden;
+    }
+}
+
+@layer components {
+    .material-symbols-outlined {
+        font-variation-settings: FILL 0, wght 400, GRAD 0, opsz 24;
+    }
+}
+
+@layer utilities {
+    .bg-primary { background-color: var(--color-primary); }
+    .bg-primary\/10 { background-color: rgb(88 204 2 / 0.1); }
+    .bg-primary\/20 { background-color: rgb(88 204 2 / 0.2); }
+    .text-primary { color: var(--color-primary); }
+    .border-primary { border-color: var(--color-primary); }
+    .border-primary\/20 { border-color: rgb(88 204 2 / 0.2); }
+    .border-primary\/30 { border-color: rgb(88 204 2 / 0.3); }
+    .hover\:border-primary:hover { border-color: var(--color-primary); }
+    .hover\:text-primary\/80:hover { color: rgb(88 204 2 / 0.8); }
+    .focus\:ring-primary:focus { --tw-ring-color: var(--color-primary); }
+    .focus\:border-primary:focus { border-color: var(--color-primary); }
+
+    .bg-secondary { background-color: var(--color-secondary); }
+    .bg-secondary\/10 { background-color: rgb(255 200 0 / 0.1); }
+    .bg-secondary\/20 { background-color: rgb(255 200 0 / 0.2); }
+    .text-secondary { color: var(--color-secondary); }
+    .text-secondary\/80 { color: rgb(255 200 0 / 0.8); }
+    .border-secondary { border-color: var(--color-secondary); }
+    .border-secondary\/30 { border-color: rgb(255 200 0 / 0.3); }
+    .border-secondary\/40 { border-color: rgb(255 200 0 / 0.4); }
+    .hover\:border-secondary:hover { border-color: var(--color-secondary); }
+
+    .bg-accent { background-color: var(--color-accent); }
+    .bg-accent\/20 { background-color: rgb(28 176 246 / 0.2); }
+    .text-accent { color: var(--color-accent); }
+    .border-accent { border-color: var(--color-accent); }
+    .border-accent\/30 { border-color: rgb(28 176 246 / 0.3); }
+    .hover\:border-accent:hover { border-color: var(--color-accent); }
+
+    .bg-background-light { background-color: var(--color-background-light); }
+    .bg-background-dark { background-color: var(--color-background-dark); }
+    .bg-surface-light { background-color: var(--color-surface-light); }
+    .bg-surface-dark { background-color: var(--color-surface-dark); }
+    .border-border-light { border-color: var(--color-border-light); }
+    .border-border-dark { border-color: var(--color-border-dark); }
+    .text-text-main-dark { color: var(--color-text-main-dark); }
+    .text-text-muted-dark { color: var(--color-text-muted-dark); }
+
+    .dark .dark\:bg-primary { background-color: var(--color-primary); }
+    .dark .dark\:bg-primary\/10 { background-color: rgb(88 204 2 / 0.1); }
+    .dark .dark\:bg-primary\/20 { background-color: rgb(88 204 2 / 0.2); }
+    .dark .dark\:text-primary { color: var(--color-primary); }
+    .dark .dark\:border-primary { border-color: var(--color-primary); }
+    .dark .dark\:border-primary\/20 { border-color: rgb(88 204 2 / 0.2); }
+    .dark .dark\:border-primary\/30 { border-color: rgb(88 204 2 / 0.3); }
+    .dark .dark\:hover\:border-primary:hover { border-color: var(--color-primary); }
+
+    .dark .dark\:bg-secondary { background-color: var(--color-secondary); }
+    .dark .dark\:bg-secondary\/10 { background-color: rgb(255 200 0 / 0.1); }
+    .dark .dark\:bg-secondary\/20 { background-color: rgb(255 200 0 / 0.2); }
+    .dark .dark\:text-secondary { color: var(--color-secondary); }
+    .dark .dark\:text-secondary\/80 { color: rgb(255 200 0 / 0.8); }
+    .dark .dark\:border-secondary { border-color: var(--color-secondary); }
+    .dark .dark\:border-secondary\/30 { border-color: rgb(255 200 0 / 0.3); }
+    .dark .dark\:border-secondary\/40 { border-color: rgb(255 200 0 / 0.4); }
+    .dark .dark\:hover\:border-secondary:hover { border-color: var(--color-secondary); }
+
+    .dark .dark\:bg-accent { background-color: var(--color-accent); }
+    .dark .dark\:bg-accent\/20 { background-color: rgb(28 176 246 / 0.2); }
+    .dark .dark\:text-accent { color: var(--color-accent); }
+    .dark .dark\:border-accent { border-color: var(--color-accent); }
+    .dark .dark\:border-accent\/30 { border-color: rgb(28 176 246 / 0.3); }
+    .dark .dark\:hover\:border-accent:hover { border-color: var(--color-accent); }
+
+    .dark .dark\:bg-background-dark { background-color: var(--color-background-dark); }
+    .dark .dark\:bg-surface-dark { background-color: var(--color-surface-dark); }
+    .dark .dark\:border-border-dark { border-color: var(--color-border-dark); }
+    .dark .dark\:text-text-main-dark { color: var(--color-text-main-dark); }
+    .dark .dark\:text-text-muted-dark { color: var(--color-text-muted-dark); }
+    .dark .dark\:hover\:bg-surface-dark:hover { background-color: var(--color-surface-dark); }
+
+    .group:hover .group-hover\:text-primary { color: var(--color-primary); }
+    .group:hover .group-hover\:text-secondary { color: var(--color-secondary); }
+    .group:hover .group-hover\:text-accent { color: var(--color-accent); }
+}
