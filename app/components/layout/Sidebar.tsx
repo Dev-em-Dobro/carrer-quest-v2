@@ -2,13 +2,11 @@
 
 import Link from 'next/link';
 import { NAV_ITEMS, LOGO_TEXT } from '@/app/lib/constants';
-import { UserProfile } from '@/app/types';
+import { useAuth } from '@/app/providers/AuthProvider';
 
-interface SidebarProps {
-    readonly user: UserProfile;
-}
+export default function Sidebar() {
+    const { user } = useAuth();
 
-export default function Sidebar({ user }: Readonly<SidebarProps>) {
     return (
         <aside className="w-64 bg-white dark:bg-background-dark border-r border-border-light dark:border-border-dark shrink-0 hidden lg:flex flex-col">
             {/* Logo */}
@@ -27,8 +25,8 @@ export default function Sidebar({ user }: Readonly<SidebarProps>) {
                         key={item.label}
                         href={item.href}
                         className={`flex items-center px-3 py-2 text-sm font-medium rounded transition-colors ${item.active
-                                ? 'bg-primary/10 text-primary border border-primary/20'
-                                : 'text-slate-600 dark:text-text-muted-dark hover:bg-slate-50 dark:hover:bg-surface-dark hover:text-slate-900 dark:hover:text-white group'
+                            ? 'bg-primary/10 text-primary border border-primary/20'
+                            : 'text-slate-600 dark:text-text-muted-dark hover:bg-slate-50 dark:hover:bg-surface-dark hover:text-slate-900 dark:hover:text-white group'
                             }`}
                     >
                         <span

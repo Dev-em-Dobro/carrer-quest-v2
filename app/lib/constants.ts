@@ -18,11 +18,6 @@ export const NAV_ITEMS: NavItem[] = [
     href: '/assessments',
   },
   {
-    label: 'Achievements',
-    icon: 'trophy',
-    href: '/achievements',
-  },
-  {
     label: 'Analytics',
     icon: 'bar_chart',
     href: '/analytics',
