@@ -7,6 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum JobLevel {
+  ESTAGIO
+  JUNIOR
+  PLENO
+  SENIOR
+  OUTRO
+}
+
+enum JobSource {
+  LINKEDIN
+  GUPY
+  COMPANY_SITE
+  OTHER
+}
+
+enum JobIngestionStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String
@@ -62,4 +83,42 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  title       String
+  companyName String
+  level       JobLevel  @default(OUTRO)
+  stack       String[]
+  location    String?
+  isRemote    Boolean   @default(false)
+  publishedAt DateTime?
+  source      JobSource
+  sourceUrl   String
+  externalId  String?
+  fingerprint String    @unique
+  lastSeenAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([source])
+  @@index([level])
+  @@index([publishedAt])
+  @@index([companyName])
+  @@unique([source, externalId])
+}
+
+model JobIngestionLog {
+  id            String             @id @default(cuid())
+  source        JobSource
+  startedAt     DateTime
+  finishedAt    DateTime?
+  fetchedCount  Int                @default(0)
+  insertedCount Int                @default(0)
+  updatedCount  Int                @default(0)
+  failedCount   Int                @default(0)
+  status        JobIngestionStatus
+  errorSummary  String?
+  createdAt     DateTime           @default(now())
 }
