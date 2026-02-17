@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import Header from '@/app/components/layout/Header';
 import Sidebar from '@/app/components/layout/Sidebar';
+import ProfileEditor from '@/app/components/profile/ProfileEditor';
 import { auth } from '@/app/lib/auth';
 import { getOrCreateUserProfile, toClientProfile } from '@/app/lib/profile/profile';
 
@@ -57,6 +58,8 @@ export default async function PerfilPage() {
                 <Header title="Perfil" />
 
                 <div className="flex-1 overflow-visible lg:overflow-auto p-6 md:p-8 space-y-6">
+                    <ProfileEditor initialProfile={clientProfile} />
+
                     <SectionCard title="Dados Pessoais">
                         <div className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
                             <p><span className="font-bold">Nome:</span> {clientProfile.fullName ?? 'Não informado'}</p>
