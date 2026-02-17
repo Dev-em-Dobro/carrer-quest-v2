@@ -37,5 +37,6 @@ export type RawSourceJob = {
     location?: string | null;
     publishedAt?: string | Date | null;
     sourceUrl: string;
+    source?: JobSource;
     externalId?: string | null;
 };

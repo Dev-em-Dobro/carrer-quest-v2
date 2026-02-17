@@ -19,7 +19,9 @@ const JOB_BOARD_STACK_FILTER = [
 export async function getJobBoardJobs() {
     return prisma.job.findMany({
         where: {
-            source: JobSource.GUPY,
+            source: {
+                in: [JobSource.GUPY, JobSource.OTHER],
+            },
             level: { in: [JobLevel.ESTAGIO, JobLevel.JUNIOR, JobLevel.PLENO, JobLevel.OUTRO] },
             stack: {
                 hasSome: JOB_BOARD_STACK_FILTER,

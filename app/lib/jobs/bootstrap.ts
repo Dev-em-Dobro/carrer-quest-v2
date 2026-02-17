@@ -4,6 +4,10 @@ import { prisma } from "@/app/lib/prisma";
 import { buildJobFingerprint } from "@/app/lib/jobs/dedupe";
 import { normalizeLevel, normalizeLocation, normalizeStack } from "@/app/lib/jobs/normalizers";
 import { fetchFromGupy } from "@/app/lib/jobs/sources/gupy";
+import { fetchFromProgramathor } from "@/app/lib/jobs/sources/programathor";
+import { fetchFromRemotive } from "@/app/lib/jobs/sources/remotive";
+import { fetchFromRemoteOk } from "@/app/lib/jobs/sources/remoteok";
+import { fetchFromTrampos } from "@/app/lib/jobs/sources/trampos";
 
 function normalizeSourceUrl(value: string): string | null {
     try {
@@ -15,7 +19,21 @@ function normalizeSourceUrl(value: string): string | null {
 }
 
 export async function bootstrapInitialJobs() {
-    const rawJobs = await fetchFromGupy();
+    const shouldUseGupy = process.env.JOBS_CONNECTOR_GUPY !== "false";
+    const shouldUseRemotive = process.env.JOBS_CONNECTOR_REMOTIVE === "true";
+    const shouldUseRemoteOk = process.env.JOBS_CONNECTOR_REMOTEOK === "true";
+    const shouldUseProgramathor = process.env.JOBS_CONNECTOR_PROGRAMATHOR === "true";
+    const shouldUseTrampos = process.env.JOBS_CONNECTOR_TRAMPOS === "true";
+
+    const [gupyJobs, remotiveJobs, remoteOkJobs, programathorJobs, tramposJobs] = await Promise.all([
+        shouldUseGupy ? fetchFromGupy() : Promise.resolve([]),
+        shouldUseRemotive ? fetchFromRemotive() : Promise.resolve([]),
+        shouldUseRemoteOk ? fetchFromRemoteOk() : Promise.resolve([]),
+        shouldUseProgramathor ? fetchFromProgramathor() : Promise.resolve([]),
+        shouldUseTrampos ? fetchFromTrampos() : Promise.resolve([]),
+    ]);
+
+    const rawJobs = [...gupyJobs, ...remotiveJobs, ...remoteOkJobs, ...programathorJobs, ...tramposJobs];
 
     let insertedCount = 0;
     let updatedCount = 0;
@@ -52,7 +70,7 @@ export async function bootstrapInitialJobs() {
                 location,
                 isRemote,
                 publishedAt: rawJob.publishedAt ? new Date(rawJob.publishedAt) : null,
-                source: JobSource.GUPY,
+                source: rawJob.source ?? JobSource.GUPY,
                 sourceUrl,
                 externalId: rawJob.externalId ?? null,
                 fingerprint,
@@ -66,6 +84,7 @@ export async function bootstrapInitialJobs() {
                 location,
                 isRemote,
                 publishedAt: rawJob.publishedAt ? new Date(rawJob.publishedAt) : null,
+                source: rawJob.source ?? JobSource.GUPY,
                 sourceUrl,
                 externalId: rawJob.externalId ?? null,
                 lastSeenAt: new Date(),

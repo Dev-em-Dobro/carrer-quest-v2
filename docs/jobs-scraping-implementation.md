@@ -16,10 +16,17 @@ Sistema de curadoria de vagas tech que:
 ┌─────────────┐
 │   Gupy API  │ ← Fonte (portal.gupy.io)
 └──────┬──────┘
-       │
-       ▼
+  │
+  ├──────────────┐
+  ▼              ▼
+┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  ┌───────────────┐
+│ Remotive API │  │ RemoteOK API │  │ ProgramaThor    │  │ Trampos       │
+└──────┬───────┘  └──────┬───────┘  └────────┬────────┘  └───────┬───────┘
+  │                 │                  │                     │
+  └─────────────────┴──────────────────┴─────────────────────┘
+        ▼
 ┌──────────────────┐
-│ fetchFromGupy()  │ ← Conector (sources/gupy.ts)
+│ Connectors       │ ← sources/gupy.ts + remotive.ts + remoteok.ts + programathor.ts + trampos.ts
 └────────┬─────────┘
          │
          ▼
@@ -298,7 +305,34 @@ const sourceLabel = {
 # .env
 DATABASE_URL="postgresql://..."
 JOBS_BOOTSTRAP_SECRET="your-random-secret-256-bits"
+
+# Conectores opcionais (default: false)
+JOBS_CONNECTOR_REMOTIVE="false"
+JOBS_CONNECTOR_REMOTEOK="false"
+JOBS_CONNECTOR_PROGRAMATHOR="false"
+JOBS_CONNECTOR_TRAMPOS="false"
+CRON_SECRET="defina-um-segredo-forte"
 ```
+
+### 1.1 Conectores disponíveis
+
+- `Gupy` (sempre ativo no bootstrap)
+- `Remotive` (opcional via `JOBS_CONNECTOR_REMOTIVE=true`)
+- `RemoteOK` (opcional via `JOBS_CONNECTOR_REMOTEOK=true`)
+- `ProgramaThor` (opcional via `JOBS_CONNECTOR_PROGRAMATHOR=true`)
+- `Trampos` (opcional via `JOBS_CONNECTOR_TRAMPOS=true`)
+
+Todos seguem a mesma regra de compliance da Gupy: apenas metadados + redirecionamento para URL original.
+
+### 1.2 Curadoria semanal automática
+
+O projeto está preparado para rodar ingestão semanal via `vercel.json`:
+
+- Path: `/api/jobs/bootstrap`
+- Schedule: `0 9 * * 1` (toda segunda-feira, 09:00 UTC)
+
+Para autenticação automática, configure `CRON_SECRET` no ambiente de deploy.
+O endpoint aceita `Authorization: Bearer <CRON_SECRET>` (cron) e também `x-bootstrap-secret` (manual).
 
 ### 2. Database Migration
 
@@ -356,7 +390,7 @@ export default async function DashboardPage() {
 
 ### Phase 4: Múltiplas Fontes
 - Conector LinkedIn (`sources/linkedin.ts`)
-- Conector Programathor (`sources/programathor.ts`)
+- Conector ATS/parcerias oficiais (`sources/partner-ats.ts`)
 - Conector sites próprios (`sources/company-site.ts`)
 - Rate limiting por fonte
 - Circuit breakers para fontes instáveis

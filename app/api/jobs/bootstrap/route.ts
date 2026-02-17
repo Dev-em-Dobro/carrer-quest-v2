@@ -4,22 +4,34 @@ import { bootstrapInitialJobs } from "@/app/lib/jobs/bootstrap";
 
 export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
-    const secret = process.env.JOBS_BOOTSTRAP_SECRET;
+function isAuthorized(request: NextRequest) {
+    const bootstrapSecret = process.env.JOBS_BOOTSTRAP_SECRET;
+    const cronSecret = process.env.CRON_SECRET;
 
-    if (!secret) {
-        return NextResponse.json(
-            { error: "JOBS_BOOTSTRAP_SECRET não está configurado." },
-            { status: 500 },
-        );
+    const headerSecret = request.headers.get("x-bootstrap-secret");
+    const bearerToken = request.headers.get("authorization")?.replace("Bearer ", "");
+
+    const acceptedSecrets = [bootstrapSecret, cronSecret].filter(
+        (value): value is string => Boolean(value),
+    );
+
+    if (acceptedSecrets.length === 0) {
+        return { ok: false, status: 500, message: "Nenhum segredo de execução está configurado." };
     }
 
-    const providedSecret = request.headers.get("x-bootstrap-secret");
+    const provided = [headerSecret, bearerToken].filter(
+        (value): value is string => Boolean(value),
+    );
+    const ok = provided.some((value) => acceptedSecrets.includes(value));
 
-    if (!providedSecret || providedSecret !== secret) {
-        return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+    if (!ok) {
+        return { ok: false, status: 401, message: "Não autorizado." };
     }
 
+    return { ok: true as const };
+}
+
+async function runBootstrap() {
     const result = await bootstrapInitialJobs();
 
     return NextResponse.json({
@@ -27,3 +39,16 @@ export async function POST(request: NextRequest) {
         ...result,
     });
 }
+
+async function handleBootstrap(request: NextRequest) {
+    const auth = isAuthorized(request);
+
+    if (!auth.ok) {
+        return NextResponse.json({ error: auth.message }, { status: auth.status });
+    }
+
+    return runBootstrap();
+}
+
+export const GET = handleBootstrap;
+export const POST = handleBootstrap;
