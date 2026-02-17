@@ -29,9 +29,9 @@ export default function SearchFilterBar({ onSearchChange, onSortChange }: Readon
                     className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-border-dark bg-transparent dark:bg-background-dark dark:text-slate-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded font-mono border"
                     onChange={(e) => onSortChange?.(e.target.value)}
                 >
-                    <option value="relevant">Most Relevant</option>
-                    <option value="newest">Newest</option>
-                    <option value="salary">Salary High-Low</option>
+                    <option value="relevant">Mais compatíveis</option>
+                    <option value="newest">Mais recentes</option>
+                    <option value="salary">Empresa (A-Z)</option>
                 </select>
             </div>
         </div>

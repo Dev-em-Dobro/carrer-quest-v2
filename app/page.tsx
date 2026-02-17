@@ -1,14 +1,8 @@
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import SkillGapCard from './components/dashboard/SkillGapCard';
-import WeeklyOutputCard from './components/dashboard/WeeklyOutputCard';
 import ResumeUploadCard from './components/dashboard/ResumeUploadCard';
 import CandidacyReadinessCard from './components/dashboard/CandidacyReadinessCard';
 import { getJobBoardJobs } from './lib/jobs/jobBoard';
-import {
-    mockSkills,
-    mockWeeklyMetrics,
-} from './lib/mockData';
 
 export default async function Home() {
     const jobs = await getJobBoardJobs();
@@ -31,16 +25,6 @@ export default async function Home() {
                             <ResumeUploadCard />
 
                             <CandidacyReadinessCard jobs={jobs} />
-
-                        </div>
-
-                        {/* Right Column - Widgets */}
-                        <div className="space-y-6">
-                            {/* Skill Gap */}
-                            <SkillGapCard skills={mockSkills} />
-
-                            {/* Weekly Output */}
-                            <WeeklyOutputCard metrics={mockWeeklyMetrics} />
 
                         </div>
                     </div>
