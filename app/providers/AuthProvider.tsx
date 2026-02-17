@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { useSession } from "@/app/lib/auth-client";
+import { authClient } from "@/app/lib/auth-client";
 import { mockUserProfile } from "@/app/lib/mockData";
 import type { UserProfile } from "@/app/types";
 
@@ -31,9 +31,35 @@ type ApiProfileResponse = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-    const { data: session, isPending } = useSession();
+    const [session, setSession] = useState<{ user?: { name?: string | null; email?: string | null; image?: string | null } } | null>(null);
+    const [isSessionPending, setIsSessionPending] = useState(true);
     const [profileData, setProfileData] = useState<ApiProfileResponse["profile"] | null>(null);
     const [isProfilePending, setIsProfilePending] = useState(false);
+
+    useEffect(() => {
+        let isActive = true;
+
+        async function loadSession() {
+            setIsSessionPending(true);
+            try {
+                const result = await authClient.getSession();
+                if (!isActive) {
+                    return;
+                }
+                setSession(result.data ?? null);
+            } finally {
+                if (isActive) {
+                    setIsSessionPending(false);
+                }
+            }
+        }
+
+        void loadSession();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
 
     const refreshProfile = useCallback(async () => {
         if (!session?.user) {
@@ -91,7 +117,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
             return {
                 user: mergedUser,
                 isAuthenticated: true,
-                isPending: isPending || isProfilePending,
+                isPending: isSessionPending || isProfilePending,
                 refreshProfile,
             };
         }
@@ -99,10 +125,10 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
         return {
             user: mockUserProfile,
             isAuthenticated: false,
-            isPending,
+            isPending: isSessionPending,
             refreshProfile,
         };
-    }, [isPending, isProfilePending, profileData, refreshProfile, session?.user, session?.user?.email, session?.user?.image, session?.user?.name]);
+    }, [isSessionPending, isProfilePending, profileData, refreshProfile, session?.user, session?.user?.email, session?.user?.image, session?.user?.name]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
