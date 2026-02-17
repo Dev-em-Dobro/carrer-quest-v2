@@ -19,14 +19,14 @@ Sistema de curadoria de vagas tech que:
   │
   ├──────────────┐
   ▼              ▼
-┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  ┌───────────────┐
-│ Remotive API │  │ RemoteOK API │  │ ProgramaThor    │  │ Trampos       │
-└──────┬───────┘  └──────┬───────┘  └────────┬────────┘  └───────┬───────┘
+┌──────────────┐  ┌──────────────┐  ┌─────────────────┐  ┌───────────────┐  ┌──────────────┐
+│ Remotive API │  │ RemoteOK API │  │ ProgramaThor    │  │ Trampos       │  │ Adzuna API   │
+└──────┬───────┘  └──────┬───────┘  └────────┬────────┘  └───────┬───────┘  └──────┬───────┘
   │                 │                  │                     │
-  └─────────────────┴──────────────────┴─────────────────────┘
+  └─────────────────┴──────────────────┴─────────────────────┴──────────────┘
         ▼
 ┌──────────────────┐
-│ Connectors       │ ← sources/gupy.ts + remotive.ts + remoteok.ts + programathor.ts + trampos.ts
+│ Connectors       │ ← sources/gupy.ts + remotive.ts + remoteok.ts + programathor.ts + trampos.ts + adzuna.ts
 └────────┬─────────┘
          │
          ▼
@@ -311,6 +311,15 @@ JOBS_CONNECTOR_REMOTIVE="false"
 JOBS_CONNECTOR_REMOTEOK="false"
 JOBS_CONNECTOR_PROGRAMATHOR="false"
 JOBS_CONNECTOR_TRAMPOS="false"
+JOBS_CONNECTOR_ADZUNA="false"
+
+# Adzuna (obrigatório quando JOBS_CONNECTOR_ADZUNA=true)
+ADZUNA_APP_ID="seu-app-id"
+ADZUNA_APP_KEY="sua-app-key"
+ADZUNA_COUNTRY="br"
+ADZUNA_WHERE="" # opcional (ex: "sao paulo")
+ADZUNA_WHAT="software developer" # opcional
+ADZUNA_WHAT_EXCLUDE="" # opcional (ex: "marketing")
 CRON_SECRET="defina-um-segredo-forte"
 ```
 
@@ -321,6 +330,7 @@ CRON_SECRET="defina-um-segredo-forte"
 - `RemoteOK` (opcional via `JOBS_CONNECTOR_REMOTEOK=true`)
 - `ProgramaThor` (opcional via `JOBS_CONNECTOR_PROGRAMATHOR=true`)
 - `Trampos` (opcional via `JOBS_CONNECTOR_TRAMPOS=true`)
+- `Adzuna` (opcional via `JOBS_CONNECTOR_ADZUNA=true` + `ADZUNA_APP_ID`/`ADZUNA_APP_KEY`)
 
 Todos seguem a mesma regra de compliance da Gupy: apenas metadados + redirecionamento para URL original.
 

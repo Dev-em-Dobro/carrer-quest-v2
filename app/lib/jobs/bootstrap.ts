@@ -3,6 +3,7 @@ import { JobSource } from "@prisma/client";
 import { prisma } from "@/app/lib/prisma";
 import { buildJobFingerprint } from "@/app/lib/jobs/dedupe";
 import { normalizeLevel, normalizeLocation, normalizeStack } from "@/app/lib/jobs/normalizers";
+import { fetchFromAdzuna } from "@/app/lib/jobs/sources/adzuna";
 import { fetchFromGupy } from "@/app/lib/jobs/sources/gupy";
 import { fetchFromProgramathor } from "@/app/lib/jobs/sources/programathor";
 import { fetchFromRemotive } from "@/app/lib/jobs/sources/remotive";
@@ -24,16 +25,18 @@ export async function bootstrapInitialJobs() {
     const shouldUseRemoteOk = process.env.JOBS_CONNECTOR_REMOTEOK === "true";
     const shouldUseProgramathor = process.env.JOBS_CONNECTOR_PROGRAMATHOR === "true";
     const shouldUseTrampos = process.env.JOBS_CONNECTOR_TRAMPOS === "true";
+    const shouldUseAdzuna = process.env.JOBS_CONNECTOR_ADZUNA === "true";
 
-    const [gupyJobs, remotiveJobs, remoteOkJobs, programathorJobs, tramposJobs] = await Promise.all([
+    const [gupyJobs, remotiveJobs, remoteOkJobs, programathorJobs, tramposJobs, adzunaJobs] = await Promise.all([
         shouldUseGupy ? fetchFromGupy() : Promise.resolve([]),
         shouldUseRemotive ? fetchFromRemotive() : Promise.resolve([]),
         shouldUseRemoteOk ? fetchFromRemoteOk() : Promise.resolve([]),
         shouldUseProgramathor ? fetchFromProgramathor() : Promise.resolve([]),
         shouldUseTrampos ? fetchFromTrampos() : Promise.resolve([]),
+        shouldUseAdzuna ? fetchFromAdzuna() : Promise.resolve([]),
     ]);
 
-    const rawJobs = [...gupyJobs, ...remotiveJobs, ...remoteOkJobs, ...programathorJobs, ...tramposJobs];
+    const rawJobs = [...gupyJobs, ...remotiveJobs, ...remoteOkJobs, ...programathorJobs, ...tramposJobs, ...adzunaJobs];
 
     let insertedCount = 0;
     let updatedCount = 0;
