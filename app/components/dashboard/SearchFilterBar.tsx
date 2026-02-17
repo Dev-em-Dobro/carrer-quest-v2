@@ -4,9 +4,10 @@ interface SearchFilterBarProps {
     readonly onSearchChange?: (value: string) => void;
     readonly onSortChange?: (value: string) => void;
     readonly onLevelChange?: (value: string) => void;
+    readonly onWorkModelChange?: (value: string) => void;
 }
 
-export default function SearchFilterBar({ onSearchChange, onSortChange, onLevelChange }: Readonly<SearchFilterBarProps>) {
+export default function SearchFilterBar({ onSearchChange, onSortChange, onLevelChange, onWorkModelChange }: Readonly<SearchFilterBarProps>) {
     return (
         <div className="flex flex-col sm:flex-row gap-4 bg-white dark:bg-surface-dark p-4 border border-border-light dark:border-border-dark shadow-sm rounded-lg">
             {/* Search Input */}
@@ -36,6 +37,19 @@ export default function SearchFilterBar({ onSearchChange, onSortChange, onLevelC
                     <option value="JUNIOR">Júnior</option>
                     <option value="PLENO">Pleno</option>
                     <option value="SENIOR">Sênior</option>
+                </select>
+            </div>
+
+            <div className="flex gap-2">
+                <select
+                    className="block w-full pl-3 pr-10 py-2 text-base border-slate-300 dark:border-border-dark bg-transparent dark:bg-background-dark dark:text-slate-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded font-mono border"
+                    onChange={(e) => onWorkModelChange?.(e.target.value)}
+                    defaultValue="all"
+                >
+                    <option value="all">Todos modelos</option>
+                    <option value="remote">Remoto</option>
+                    <option value="hybrid">Híbrido</option>
+                    <option value="onsite">Presencial</option>
                 </select>
             </div>
 

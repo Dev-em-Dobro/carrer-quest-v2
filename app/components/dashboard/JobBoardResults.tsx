@@ -13,6 +13,7 @@ interface JobBoardResultsProps {
 
 type SortMode = 'relevant' | 'newest' | 'salary';
 type LevelFilter = 'all' | JobListItem['level'];
+type WorkModelFilter = 'all' | 'remote' | 'hybrid' | 'onsite';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -36,6 +37,20 @@ function normalize(value: string) {
     return value.toLowerCase().trim();
 }
 
+function detectWorkModel(job: JobListItem): Exclude<WorkModelFilter, 'all'> {
+    const location = normalize(job.location ?? '');
+
+    if (job.isRemote || /remoto|remote|home\s?office/.test(location)) {
+        return 'remote';
+    }
+
+    if (/h[ií]brido|hybrid/.test(location)) {
+        return 'hybrid';
+    }
+
+    return 'onsite';
+}
+
 function calculateJobFit(job: JobListItem, knownTechnologies: string[]) {
     const requiredSkills = job.stack.map(normalize);
     if (requiredSkills.length === 0) {
@@ -53,20 +68,17 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
     const [searchValue, setSearchValue] = useState('');
     const [sortMode, setSortMode] = useState<SortMode>('relevant');
     const [levelFilter, setLevelFilter] = useState<LevelFilter>('all');
+    const [workModelFilter, setWorkModelFilter] = useState<WorkModelFilter>('all');
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchValue, sortMode, levelFilter]);
+    }, [searchValue, sortMode, levelFilter, workModelFilter]);
 
     const filteredAndSortedJobs = useMemo(() => {
         const query = normalize(searchValue);
 
         const filtered = jobs.filter((job) => {
-            if (!query) {
-                return true;
-            }
-
             const searchableFields = [
                 normalize(job.title),
                 normalize(job.companyName),
@@ -76,10 +88,12 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
                 ...job.stack.map(normalize),
             ];
 
-            const matchesSearch = searchableFields.some((field) => field.includes(query));
+            const matchesSearch = !query || searchableFields.some((field) => field.includes(query));
             const matchesLevel = levelFilter === 'all' || job.level === levelFilter;
+            const workModel = detectWorkModel(job);
+            const matchesWorkModel = workModelFilter === 'all' || workModel === workModelFilter;
 
-            return matchesSearch && matchesLevel;
+            return matchesSearch && matchesLevel && matchesWorkModel;
         });
 
         const sorted = [...filtered].sort((left, right) => {
@@ -110,7 +124,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
         });
 
         return sorted;
-    }, [jobs, levelFilter, searchValue, sortMode, user.knownTechnologies]);
+    }, [jobs, levelFilter, searchValue, sortMode, user.knownTechnologies, workModelFilter]);
 
     const totalPages = Math.max(1, Math.ceil(filteredAndSortedJobs.length / ITEMS_PER_PAGE));
     const activePage = Math.min(currentPage, totalPages);
@@ -128,6 +142,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
             <SearchFilterBar
                 onSearchChange={setSearchValue}
                 onLevelChange={(value) => setLevelFilter((value as LevelFilter) || 'all')}
+                onWorkModelChange={(value) => setWorkModelFilter((value as WorkModelFilter) || 'all')}
                 onSortChange={(value) => setSortMode((value as SortMode) || 'relevant')}
             />
 

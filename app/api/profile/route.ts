@@ -25,6 +25,18 @@ export async function GET() {
     return NextResponse.json({ profile: toClientProfile(profile) });
 }
 
+export async function HEAD() {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session?.user) {
+        return new NextResponse(null, { status: 401 });
+    }
+
+    return new NextResponse(null, { status: 200 });
+}
+
 type ProfilePatchBody = {
     fullName?: string;
     linkedinUrl?: string;
@@ -105,5 +117,76 @@ export async function PATCH(request: Request) {
     return NextResponse.json({
         message: 'Perfil atualizado com sucesso.',
         profile: toClientProfile(updatedProfile),
+    });
+}
+
+export async function DELETE() {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session?.user) {
+        return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    }
+
+    await getOrCreateUserProfile({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+    });
+
+    const clearedProfile = await prisma.userProfile.update({
+        where: { userId: session.user.id },
+        data: {
+            fullName: null,
+            linkedinUrl: null,
+            githubUrl: null,
+            city: null,
+            professionalSummary: null,
+            experiences: [],
+            knownTechnologies: [],
+            certifications: [],
+            languages: [],
+            resumeFileName: null,
+            resumeUploadedAt: null,
+            resumeSyncStatus: 'NOT_UPLOADED',
+        },
+    });
+
+    return NextResponse.json({
+        message: 'Dados pessoais do perfil removidos com sucesso.',
+        profile: toClientProfile(clearedProfile),
+    });
+}
+
+export async function POST(request: Request) {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session?.user) {
+        return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const body = await request.json().catch(() => ({})) as { action?: string };
+
+    if (body.action !== 'export') {
+        return NextResponse.json({ error: 'Ação inválida.' }, { status: 400 });
+    }
+
+    const profile = await getOrCreateUserProfile({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+    });
+
+    return NextResponse.json({
+        exportedAt: new Date().toISOString(),
+        user: {
+            id: session.user.id,
+            name: session.user.name,
+            email: session.user.email,
+        },
+        profile: toClientProfile(profile),
     });
 }
