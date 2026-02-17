@@ -5,7 +5,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Dashboard',
     icon: 'dashboard',
     href: '/',
-    active: true,
   },
   {
     label: 'Job Board',

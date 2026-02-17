@@ -18,25 +18,25 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     const { data: session, isPending } = useSession();
 
     const value = useMemo<AuthContextValue>(() => {
-        if (!session?.user) {
+        if (session?.user) {
             return {
-                user: mockUserProfile,
-                isAuthenticated: false,
+                user: {
+                    ...mockUserProfile,
+                    name: session.user.name || session.user.email,
+                    avatar: session.user.image || "/default-avatar.png",
+                    role: session.user.email,
+                },
+                isAuthenticated: true,
                 isPending,
             };
         }
 
         return {
-            user: {
-                ...mockUserProfile,
-                name: session.user.name || session.user.email,
-                avatar: session.user.image || "/default-avatar.png",
-                role: session.user.email,
-            },
-            isAuthenticated: true,
+            user: mockUserProfile,
+            isAuthenticated: false,
             isPending,
         };
-    }, [isPending, session?.user]);
+    }, [isPending, session?.user?.name, session?.user?.email, session?.user?.image]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
