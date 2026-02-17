@@ -4,15 +4,49 @@ import { useState } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 
 export default function ResumeUploadCard() {
-    const { user } = useAuth();
+    const { user, refreshProfile } = useAuth();
     const [fileName, setFileName] = useState<string | null>(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
 
-    function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
         const selectedFile = event.target.files?.[0];
         if (!selectedFile) {
             return;
         }
-        setFileName(selectedFile.name);
+
+        if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
+            setMessage('Apenas arquivos PDF são aceitos.');
+            return;
+        }
+
+        setIsUploading(true);
+        setMessage(null);
+
+        try {
+            const body = new FormData();
+            body.append('file', selectedFile);
+
+            const response = await fetch('/api/profile/resume', {
+                method: 'POST',
+                body,
+            });
+
+            const payload = (await response.json()) as { message?: string; error?: string };
+
+            if (!response.ok) {
+                setMessage(payload.error ?? 'Falha ao processar currículo.');
+                return;
+            }
+
+            setFileName(selectedFile.name);
+            setMessage(payload.message ?? 'Currículo enviado e processado com sucesso.');
+            await refreshProfile();
+        } catch {
+            setMessage('Falha de rede ao enviar currículo.');
+        } finally {
+            setIsUploading(false);
+        }
     }
 
     let statusLabel = 'Não enviado';
@@ -39,11 +73,12 @@ export default function ResumeUploadCard() {
 
             <div className="mt-4">
                 <label className="inline-flex items-center gap-2 px-3 py-2 text-xs font-bold rounded border border-primary/30 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors uppercase">
-                    <span>Upload PDF</span>
+                    <span>{isUploading ? 'Processando...' : 'Upload PDF'}</span>
                     <input
                         type="file"
                         accept="application/pdf"
                         className="hidden"
+                        disabled={isUploading}
                         onChange={handleFileChange}
                     />
                 </label>
@@ -52,6 +87,7 @@ export default function ResumeUploadCard() {
             <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 space-y-1">
                 <p>Status da sincronização: <span className="font-bold">{statusLabel}</span></p>
                 {fileName && <p>Arquivo selecionado: <span className="font-bold">{fileName}</span></p>}
+                {message && <p>{message}</p>}
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">

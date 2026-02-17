@@ -41,7 +41,14 @@ export interface UserProfile {
     levelName: string;
     levelProgress: number;
     xp: number;
+    linkedinUrl?: string | null;
+    githubUrl?: string | null;
+    city?: string | null;
+    professionalSummary?: string | null;
+    experiences: string[];
     knownTechnologies: string[];
+    certifications: string[];
+    languages: string[];
     resumeSyncStatus: 'not_uploaded' | 'uploaded' | 'processing' | 'ready';
 }
 
@@ -49,5 +56,4 @@ export type NavItem = {
     label: string;
     icon: string;
     href: string;
-    active?: boolean;
 };

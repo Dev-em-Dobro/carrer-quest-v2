@@ -21,6 +21,11 @@ export const NAV_ITEMS: NavItem[] = [
     icon: 'bar_chart',
     href: '/analytics',
   },
+  {
+    label: 'Perfil',
+    icon: 'person',
+    href: '/perfil',
+  },
 ];
 
 export const LOGO_TEXT = {

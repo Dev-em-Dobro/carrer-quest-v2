@@ -8,7 +8,14 @@ export const mockUserProfile: UserProfile = {
     levelName: 'Senior',
     levelProgress: 82,
     xp: 1850,
+    linkedinUrl: null,
+    githubUrl: null,
+    city: null,
+    professionalSummary: null,
+    experiences: [],
     knownTechnologies: ['javascript', 'typescript', 'react', 'next', 'node'],
+    certifications: [],
+    languages: [],
     resumeSyncStatus: 'not_uploaded',
 };
 

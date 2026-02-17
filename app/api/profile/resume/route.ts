@@ -1,0 +1,130 @@
+import { headers } from 'next/headers';
+import { NextResponse } from 'next/server';
+import { PDFParse } from 'pdf-parse';
+import { getData } from 'pdf-parse/worker';
+
+import { auth } from '@/app/lib/auth';
+import { prisma } from '@/app/lib/prisma';
+import { getOrCreateUserProfile, toClientProfile } from '@/app/lib/profile/profile';
+import { extractResumeDataFromText } from '@/app/lib/resume/extractor';
+
+export const runtime = 'nodejs';
+
+const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
+type PdfParseLegacyFn = (buffer: Buffer) => Promise<{ text: string }>;
+type PdfParseV2Module = {
+    PDFParse?: new (options: { data: Uint8Array | Buffer }) => {
+        getText: () => Promise<{ text: string }>;
+        destroy?: () => Promise<void>;
+    };
+    default?: PdfParseLegacyFn;
+};
+
+PDFParse.setWorker(getData());
+
+function isValidPdfMagicBytes(fileBuffer: Buffer) {
+    const signature = fileBuffer.subarray(0, 5).toString('ascii');
+    return signature === '%PDF-';
+}
+
+function hasPdfExtension(fileName: string) {
+    return fileName.toLowerCase().endsWith('.pdf');
+}
+
+export async function POST(request: Request) {
+    const session = await auth.api.getSession({
+        headers: await headers(),
+    });
+
+    if (!session?.user) {
+        return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file');
+
+    if (!(file instanceof File)) {
+        return NextResponse.json({ error: 'Arquivo inválido.' }, { status: 400 });
+    }
+
+    if (!hasPdfExtension(file.name)) {
+        return NextResponse.json({ error: 'Apenas arquivos .pdf são aceitos.' }, { status: 400 });
+    }
+
+    if (file.size <= 0 || file.size > MAX_FILE_SIZE_BYTES) {
+        return NextResponse.json({ error: 'Arquivo PDF deve ter até 5MB.' }, { status: 400 });
+    }
+
+    const fileArrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(fileArrayBuffer);
+
+    if (!isValidPdfMagicBytes(fileBuffer)) {
+        return NextResponse.json({ error: 'Arquivo rejeitado: assinatura de PDF inválida.' }, { status: 400 });
+    }
+
+    const existingProfile = await getOrCreateUserProfile({
+        id: session.user.id,
+        name: session.user.name,
+        email: session.user.email,
+    });
+
+    await prisma.userProfile.update({
+        where: { userId: session.user.id },
+        data: {
+            resumeFileName: file.name,
+            resumeSyncStatus: 'PROCESSING',
+            resumeUploadedAt: new Date(),
+        },
+    });
+
+    try {
+        const parser = new PDFParse({ data: fileBuffer });
+        const parsedPdf = await parser.getText();
+        await parser.destroy();
+
+        const extracted = extractResumeDataFromText(parsedPdf.text ?? '');
+
+        const updatedProfile = await prisma.userProfile.update({
+            where: { userId: session.user.id },
+            data: {
+                fullName: extracted.fullName ?? existingProfile.fullName ?? session.user.name ?? session.user.email,
+                linkedinUrl: extracted.linkedinUrl ?? existingProfile.linkedinUrl,
+                githubUrl: extracted.githubUrl ?? existingProfile.githubUrl,
+                city: extracted.city ?? existingProfile.city,
+                professionalSummary: extracted.professionalSummary ?? existingProfile.professionalSummary,
+                experiences: extracted.experiences.length > 0 ? extracted.experiences : existingProfile.experiences,
+                knownTechnologies: extracted.knownTechnologies.length > 0
+                    ? extracted.knownTechnologies
+                    : existingProfile.knownTechnologies,
+                certifications: extracted.certifications.length > 0
+                    ? extracted.certifications
+                    : existingProfile.certifications,
+                languages: extracted.languages.length > 0 ? extracted.languages : existingProfile.languages,
+                resumeFileName: file.name,
+                resumeSyncStatus: 'READY',
+                resumeUploadedAt: new Date(),
+            },
+        });
+
+        return NextResponse.json({
+            message: 'Currículo processado com sucesso.',
+            profile: toClientProfile(updatedProfile),
+        });
+    } catch (error) {
+        console.error('[resume-upload] Falha ao processar PDF:', error);
+
+        await prisma.userProfile.update({
+            where: { userId: session.user.id },
+            data: {
+                resumeSyncStatus: 'UPLOADED',
+                resumeFileName: file.name,
+                resumeUploadedAt: new Date(),
+            },
+        });
+
+        return NextResponse.json({
+            error: 'Não foi possível processar o conteúdo do PDF.',
+        }, { status: 422 });
+    }
+}
