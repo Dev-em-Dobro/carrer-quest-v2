@@ -23,9 +23,18 @@ export async function getJobBoardJobs() {
                 in: [JobSource.GUPY, JobSource.OTHER],
             },
             level: { in: [JobLevel.ESTAGIO, JobLevel.JUNIOR, JobLevel.PLENO, JobLevel.OUTRO] },
-            stack: {
-                hasSome: JOB_BOARD_STACK_FILTER,
-            },
+            OR: [
+                {
+                    stack: {
+                        hasSome: JOB_BOARD_STACK_FILTER,
+                    },
+                },
+                {
+                    stack: {
+                        isEmpty: true,
+                    },
+                },
+            ],
         },
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
         select: {
