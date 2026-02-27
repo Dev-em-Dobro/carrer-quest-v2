@@ -1,7 +1,7 @@
-import { Pool } from "pg";
+import { Pool, type QueryResultRow } from "pg";
 
 declare global {
-    // eslint-disable-next-line no-var
+
     var _neonPool: Pool | undefined;
 }
 
@@ -17,7 +17,7 @@ if (process.env.NODE_ENV !== "production") {
     globalThis._neonPool = pool;
 }
 
-export async function sql<T = unknown>(text: string, params: unknown[] = []) {
+export async function sql<T extends QueryResultRow = QueryResultRow>(text: string, params: unknown[] = []) {
     const result = await pool.query<T>(text, params);
     return result.rows;
 }
