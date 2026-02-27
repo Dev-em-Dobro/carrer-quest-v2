@@ -9,6 +9,7 @@ import { fetchFromProgramathor } from "@/app/lib/jobs/sources/programathor";
 import { fetchFromRemotive } from "@/app/lib/jobs/sources/remotive";
 import { fetchFromRemoteOk } from "@/app/lib/jobs/sources/remoteok";
 import { fetchFromTrampos } from "@/app/lib/jobs/sources/trampos";
+import type { RawSourceJob } from "@/app/lib/jobs/types";
 
 function normalizeSourceUrl(value: string): string | null {
     try {
@@ -17,6 +18,102 @@ function normalizeSourceUrl(value: string): string | null {
     } catch {
         return null;
     }
+}
+
+type PersistResult = "inserted" | "updated" | "skipped";
+
+async function persistRawJob(rawJob: RawSourceJob): Promise<PersistResult> {
+    const sourceUrl = normalizeSourceUrl(rawJob.sourceUrl);
+
+    if (!sourceUrl) {
+        return "skipped";
+    }
+
+    const source = rawJob.source ?? JobSource.GUPY;
+    const externalId = rawJob.externalId ?? null;
+    const publishedAt = rawJob.publishedAt ? new Date(rawJob.publishedAt) : null;
+    const { location, isRemote } = normalizeLocation(rawJob.location);
+    const normalizedStack = normalizeStack(rawJob.stack);
+    const fingerprint = buildJobFingerprint({
+        title: rawJob.title,
+        companyName: rawJob.companyName,
+        sourceUrl,
+    });
+
+    if (externalId) {
+        const existingBySourceExternalId = await prisma.job.findUnique({
+            where: {
+                source_externalId: {
+                    source,
+                    externalId,
+                },
+            },
+            select: {
+                id: true,
+            },
+        });
+
+        if (existingBySourceExternalId) {
+            await prisma.job.update({
+                where: {
+                    id: existingBySourceExternalId.id,
+                },
+                data: {
+                    title: rawJob.title,
+                    companyName: rawJob.companyName,
+                    level: normalizeLevel(rawJob.level),
+                    stack: normalizedStack,
+                    location,
+                    isRemote,
+                    publishedAt,
+                    source,
+                    sourceUrl,
+                    externalId,
+                    lastSeenAt: new Date(),
+                },
+            });
+
+            return "updated";
+        }
+    }
+
+    const existing = await prisma.job.findUnique({
+        where: { fingerprint },
+        select: { id: true },
+    });
+
+    await prisma.job.upsert({
+        where: { fingerprint },
+        create: {
+            title: rawJob.title,
+            companyName: rawJob.companyName,
+            level: normalizeLevel(rawJob.level),
+            stack: normalizedStack,
+            location,
+            isRemote,
+            publishedAt,
+            source,
+            sourceUrl,
+            externalId,
+            fingerprint,
+            lastSeenAt: new Date(),
+        },
+        update: {
+            title: rawJob.title,
+            companyName: rawJob.companyName,
+            level: normalizeLevel(rawJob.level),
+            stack: normalizedStack,
+            location,
+            isRemote,
+            publishedAt,
+            source,
+            sourceUrl,
+            externalId,
+            lastSeenAt: new Date(),
+        },
+    });
+
+    return existing ? "updated" : "inserted";
 }
 
 export async function bootstrapInitialJobs() {
@@ -43,61 +140,14 @@ export async function bootstrapInitialJobs() {
     let skippedCount = 0;
 
     for (const rawJob of rawJobs) {
-        const sourceUrl = normalizeSourceUrl(rawJob.sourceUrl);
+        const result = await persistRawJob(rawJob);
 
-        if (!sourceUrl) {
-            skippedCount += 1;
-            continue;
-        }
-
-        const { location, isRemote } = normalizeLocation(rawJob.location);
-        const normalizedStack = normalizeStack(rawJob.stack);
-        const fingerprint = buildJobFingerprint({
-            title: rawJob.title,
-            companyName: rawJob.companyName,
-            sourceUrl,
-        });
-
-        const existing = await prisma.job.findUnique({
-            where: { fingerprint },
-            select: { id: true },
-        });
-
-        await prisma.job.upsert({
-            where: { fingerprint },
-            create: {
-                title: rawJob.title,
-                companyName: rawJob.companyName,
-                level: normalizeLevel(rawJob.level),
-                stack: normalizedStack,
-                location,
-                isRemote,
-                publishedAt: rawJob.publishedAt ? new Date(rawJob.publishedAt) : null,
-                source: rawJob.source ?? JobSource.GUPY,
-                sourceUrl,
-                externalId: rawJob.externalId ?? null,
-                fingerprint,
-                lastSeenAt: new Date(),
-            },
-            update: {
-                title: rawJob.title,
-                companyName: rawJob.companyName,
-                level: normalizeLevel(rawJob.level),
-                stack: normalizedStack,
-                location,
-                isRemote,
-                publishedAt: rawJob.publishedAt ? new Date(rawJob.publishedAt) : null,
-                source: rawJob.source ?? JobSource.GUPY,
-                sourceUrl,
-                externalId: rawJob.externalId ?? null,
-                lastSeenAt: new Date(),
-            },
-        });
-
-        if (existing) {
+        if (result === "inserted") {
+            insertedCount += 1;
+        } else if (result === "updated") {
             updatedCount += 1;
         } else {
-            insertedCount += 1;
+            skippedCount += 1;
         }
     }
 
