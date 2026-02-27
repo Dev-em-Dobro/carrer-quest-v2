@@ -1,4 +1,4 @@
-import { ResumeSyncStatus, type UserProfile as PrismaUserProfile } from '@prisma/client';
+import { Prisma, ResumeSyncStatus } from '@prisma/client';
 
 import { prisma } from '@/app/lib/prisma';
 
@@ -12,6 +12,13 @@ export type ClientProfile = {
     knownTechnologies: string[];
     certifications: string[];
     languages: string[];
+    projects: {
+        id: string;
+        title: string;
+        shortDescription: string | null;
+        technologies: string[];
+        deployUrl: string | null;
+    }[];
     resumeSyncStatus: 'not_uploaded' | 'uploaded' | 'processing' | 'ready';
     resumeFileName: string | null;
     resumeUploadedAt: string | null;
@@ -36,7 +43,13 @@ function mapResumeStatus(status: ResumeSyncStatus): ClientProfile['resumeSyncSta
     return 'not_uploaded';
 }
 
-export function toClientProfile(profile: PrismaUserProfile): ClientProfile {
+type PrismaUserProfileWithProjects = Prisma.UserProfileGetPayload<{
+    include: {
+        projects: true;
+    };
+}>;
+
+export function toClientProfile(profile: PrismaUserProfileWithProjects): ClientProfile {
     return {
         fullName: profile.fullName,
         linkedinUrl: profile.linkedinUrl,
@@ -47,6 +60,15 @@ export function toClientProfile(profile: PrismaUserProfile): ClientProfile {
         knownTechnologies: profile.knownTechnologies,
         certifications: profile.certifications,
         languages: profile.languages,
+        projects: profile.projects
+            .toSorted((left, right) => left.createdAt.getTime() - right.createdAt.getTime())
+            .map((project) => ({
+                id: project.id,
+                title: project.title,
+                shortDescription: project.shortDescription,
+                technologies: project.technologies,
+                deployUrl: project.deployUrl,
+            })),
         resumeSyncStatus: mapResumeStatus(profile.resumeSyncStatus),
         resumeFileName: profile.resumeFileName,
         resumeUploadedAt: profile.resumeUploadedAt?.toISOString() ?? null,
@@ -65,6 +87,13 @@ export async function getOrCreateUserProfile(user: SessionUser) {
             certifications: [],
             languages: [],
             resumeSyncStatus: 'NOT_UPLOADED',
+        },
+        include: {
+            projects: {
+                orderBy: {
+                    createdAt: 'asc',
+                },
+            },
         },
     });
 }

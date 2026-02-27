@@ -33,6 +33,14 @@ export interface WeeklyMetric {
     percentage?: number;
 }
 
+export interface UserProject {
+    id: string;
+    title: string;
+    shortDescription?: string | null;
+    technologies: string[];
+    deployUrl?: string | null;
+}
+
 export interface UserProfile {
     name: string;
     role: string;
@@ -47,6 +55,7 @@ export interface UserProfile {
     professionalSummary?: string | null;
     experiences: string[];
     knownTechnologies: string[];
+    projects: UserProject[];
     certifications: string[];
     languages: string[];
     resumeSyncStatus: 'not_uploaded' | 'uploaded' | 'processing' | 'ready';

@@ -35,6 +35,54 @@ function ListOrEmpty({ values }: Readonly<{ values: string[] }>) {
     );
 }
 
+function ProjectsOrEmpty({
+    projects,
+}: Readonly<{
+    projects: {
+        id: string;
+        title: string;
+        shortDescription: string | null;
+        technologies: string[];
+        deployUrl: string | null;
+    }[];
+}>) {
+    if (projects.length === 0) {
+        return <p className="text-sm text-slate-500 dark:text-slate-400">Sem projetos cadastrados.</p>;
+    }
+
+    return (
+        <div className="space-y-3">
+            {projects.map((project) => (
+                <article
+                    key={project.id}
+                    className="border border-border-light dark:border-border-dark rounded-lg p-4 bg-white dark:bg-surface-dark space-y-2"
+                >
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">{project.title}</p>
+
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
+                        {project.shortDescription ?? 'Sem descrição.'}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2">
+                        {project.technologies.map((technology) => (
+                            <span
+                                key={`${project.id}-${technology}`}
+                                className="inline-flex items-center px-2 py-1 text-xs font-mono font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-background-dark border border-slate-200 dark:border-border-dark rounded"
+                            >
+                                {technology}
+                            </span>
+                        ))}
+                    </div>
+
+                    <p className="text-sm text-slate-700 dark:text-slate-200">
+                        <span className="font-bold">Deploy:</span> {project.deployUrl ?? 'Não informado'}
+                    </p>
+                </article>
+            ))}
+        </div>
+    );
+}
+
 export default async function PerfilPage() {
     const session = await auth.api.getSession({ headers: await headers() });
 
@@ -77,6 +125,10 @@ export default async function PerfilPage() {
 
                     <SectionCard title="Experiências">
                         <ListOrEmpty values={clientProfile.experiences} />
+                    </SectionCard>
+
+                    <SectionCard title="Projetos">
+                        <ProjectsOrEmpty projects={clientProfile.projects} />
                     </SectionCard>
 
                     <SectionCard title="Stacks Conhecidas">

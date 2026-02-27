@@ -1,10 +1,21 @@
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
+import ResumeExampleCard from './components/dashboard/ResumeExampleCard';
 import ResumeUploadCard from './components/dashboard/ResumeUploadCard';
 import CandidacyReadinessCard from './components/dashboard/CandidacyReadinessCard';
+import { auth } from './lib/auth';
 import { getJobBoardJobs } from './lib/jobs/jobBoard';
 
 export default async function Home() {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+        redirect('/login');
+    }
+
     const jobs = await getJobBoardJobs();
 
     return (
@@ -22,6 +33,8 @@ export default async function Home() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Left Column - User Focus */}
                         <div className="lg:col-span-2 space-y-6">
+                            <ResumeExampleCard />
+
                             <ResumeUploadCard />
 
                             <CandidacyReadinessCard jobs={jobs} />

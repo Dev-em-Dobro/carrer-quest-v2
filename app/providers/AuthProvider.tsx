@@ -22,6 +22,7 @@ type ApiProfileResponse = {
         professionalSummary: string | null;
         experiences: string[];
         knownTechnologies: string[];
+        projects: UserProfile["projects"];
         certifications: string[];
         languages: string[];
         resumeSyncStatus: UserProfile["resumeSyncStatus"];
@@ -72,9 +73,11 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
             const response = await fetch("/api/profile", {
                 method: "GET",
                 cache: "no-store",
+                credentials: "include",
             });
 
             if (!response.ok) {
+                setProfileData(null);
                 return;
             }
 
@@ -90,6 +93,18 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
     }, [refreshProfile]);
 
     const value = useMemo<AuthContextValue>(() => {
+        const guestUser: UserProfile = {
+            ...mockUserProfile,
+            name: "Visitante",
+            role: "Faça login para sincronizar seu perfil",
+            knownTechnologies: [],
+            projects: [],
+            experiences: [],
+            certifications: [],
+            languages: [],
+            resumeSyncStatus: "not_uploaded",
+        };
+
         const baseUser: UserProfile = {
             ...mockUserProfile,
             name: session?.user?.name || session?.user?.email || mockUserProfile.name,
@@ -107,6 +122,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
                 professionalSummary: profileData.professionalSummary,
                 experiences: profileData.experiences,
                 knownTechnologies: profileData.knownTechnologies,
+                projects: profileData.projects,
                 certifications: profileData.certifications,
                 languages: profileData.languages,
                 resumeSyncStatus: profileData.resumeSyncStatus,
@@ -123,7 +139,7 @@ export function AuthProvider({ children }: Readonly<{ children: React.ReactNode 
         }
 
         return {
-            user: mockUserProfile,
+            user: guestUser,
             isAuthenticated: false,
             isPending: isSessionPending,
             refreshProfile,

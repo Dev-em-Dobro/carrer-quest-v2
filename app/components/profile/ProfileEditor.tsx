@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from 'react';
 
+import type { UserProject } from '@/app/types';
+
 type EditableProfile = {
     fullName: string | null;
     linkedinUrl: string | null;
@@ -10,8 +12,17 @@ type EditableProfile = {
     professionalSummary: string | null;
     experiences: string[];
     knownTechnologies: string[];
+    projects: UserProject[];
     certifications: string[];
     languages: string[];
+};
+
+type EditableProjectForm = {
+    localId: string;
+    title: string;
+    shortDescription: string;
+    technologiesText: string;
+    deployUrl: string;
 };
 
 interface ProfileEditorProps {
@@ -29,6 +40,38 @@ function fromTextAreaValue(value: string) {
         .filter(Boolean);
 }
 
+function createProjectLocalId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+
+    return `project-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function toProjectForm(project: UserProject): EditableProjectForm {
+    return {
+        localId: project.id,
+        title: project.title,
+        shortDescription: project.shortDescription ?? '',
+        technologiesText: project.technologies.join(', '),
+        deployUrl: project.deployUrl ?? '',
+    };
+}
+
+function parseProjectTechnologies(value: string) {
+    return [...new Set(value
+        .split(/[\n,]/)
+        .map((item) => item.trim())
+        .filter(Boolean))];
+}
+
+function deriveKnownTechnologiesFromProjects(projects: { technologies: string[] }[]) {
+    return [...new Set(projects
+        .flatMap((project) => project.technologies)
+        .map((technology) => technology.trim().toLowerCase())
+        .filter(Boolean))];
+}
+
 export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditorProps>) {
     const [fullName, setFullName] = useState(initialProfile.fullName ?? '');
     const [linkedinUrl, setLinkedinUrl] = useState(initialProfile.linkedinUrl ?? '');
@@ -37,7 +80,7 @@ export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditor
     const [professionalSummary, setProfessionalSummary] = useState(initialProfile.professionalSummary ?? '');
 
     const [experiencesText, setExperiencesText] = useState(toTextAreaValue(initialProfile.experiences));
-    const [knownTechnologiesText, setKnownTechnologiesText] = useState(toTextAreaValue(initialProfile.knownTechnologies));
+    const [projects, setProjects] = useState<EditableProjectForm[]>(initialProfile.projects.map(toProjectForm));
     const [certificationsText, setCertificationsText] = useState(toTextAreaValue(initialProfile.certifications));
     const [languagesText, setLanguagesText] = useState(toTextAreaValue(initialProfile.languages));
 
@@ -45,13 +88,53 @@ export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditor
     const [feedback, setFeedback] = useState<string | null>(null);
 
     const parsedPreview = useMemo(() => {
+        const parsedProjects = projects
+            .map((project) => {
+                const title = project.title.trim();
+                if (!title) {
+                    return null;
+                }
+
+                return {
+                    title,
+                    shortDescription: project.shortDescription.trim() || null,
+                    technologies: parseProjectTechnologies(project.technologiesText),
+                    deployUrl: project.deployUrl.trim() || null,
+                };
+            })
+            .filter((project): project is {
+                title: string;
+                shortDescription: string | null;
+                technologies: string[];
+                deployUrl: string | null;
+            } => project !== null);
+
         return {
             experiences: fromTextAreaValue(experiencesText),
-            knownTechnologies: fromTextAreaValue(knownTechnologiesText),
+            projects: parsedProjects,
+            knownTechnologies: deriveKnownTechnologiesFromProjects(parsedProjects),
             certifications: fromTextAreaValue(certificationsText),
             languages: fromTextAreaValue(languagesText),
         };
-    }, [certificationsText, experiencesText, knownTechnologiesText, languagesText]);
+    }, [certificationsText, experiencesText, languagesText, projects]);
+
+    function updateProject(localId: string, changes: Partial<EditableProjectForm>) {
+        setProjects((current) => current.map((project) => (project.localId === localId ? { ...project, ...changes } : project)));
+    }
+
+    function removeProject(localId: string) {
+        setProjects((current) => current.filter((project) => project.localId !== localId));
+    }
+
+    function addProject() {
+        setProjects((current) => [...current, {
+            localId: createProjectLocalId(),
+            title: '',
+            shortDescription: '',
+            technologiesText: '',
+            deployUrl: '',
+        }]);
+    }
 
     async function handleSubmit(event: { preventDefault: () => void }) {
         event.preventDefault();
@@ -71,7 +154,7 @@ export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditor
                     city,
                     professionalSummary,
                     experiences: parsedPreview.experiences,
-                    knownTechnologies: parsedPreview.knownTechnologies,
+                    projects: parsedPreview.projects,
                     certifications: parsedPreview.certifications,
                     languages: parsedPreview.languages,
                 }),
@@ -157,15 +240,6 @@ export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditor
                     </label>
 
                     <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
-                        <span>Stacks Conhecidas (uma por linha)</span>
-                        <textarea
-                            className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white min-h-24"
-                            value={knownTechnologiesText}
-                            onChange={(event) => setKnownTechnologiesText(event.target.value)}
-                        />
-                    </label>
-
-                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
                         <span>Certificações (uma por linha)</span>
                         <textarea
                             className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white min-h-24"
@@ -184,9 +258,86 @@ export default function ProfileEditor({ initialProfile }: Readonly<ProfileEditor
                     </label>
                 </div>
 
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">Projetos</p>
+                        <button
+                            type="button"
+                            onClick={addProject}
+                            className="px-3 py-2 text-xs font-bold rounded border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors uppercase"
+                        >
+                            Adicionar Projeto
+                        </button>
+                    </div>
+
+                    {projects.length === 0 ? (
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Nenhum projeto cadastrado. Adicione projetos para derivar suas skills automaticamente.
+                        </p>
+                    ) : (
+                        <div className="space-y-4">
+                            {projects.map((project, index) => (
+                                <article
+                                    key={project.localId}
+                                    className="border border-border-light dark:border-border-dark rounded-lg p-3 space-y-3 bg-white dark:bg-surface-dark"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">
+                                            Projeto {index + 1}
+                                        </p>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeProject(project.localId)}
+                                            className="text-xs font-bold uppercase text-red-600 dark:text-red-400"
+                                        >
+                                            Remover
+                                        </button>
+                                    </div>
+
+                                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
+                                        <span>Título</span>
+                                        <input
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white"
+                                            value={project.title}
+                                            onChange={(event) => updateProject(project.localId, { title: event.target.value })}
+                                        />
+                                    </label>
+
+                                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
+                                        <span>Descrição breve</span>
+                                        <textarea
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white min-h-20"
+                                            value={project.shortDescription}
+                                            onChange={(event) => updateProject(project.localId, { shortDescription: event.target.value })}
+                                        />
+                                    </label>
+
+                                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
+                                        <span>Tecnologias (separadas por vírgula)</span>
+                                        <textarea
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white min-h-20"
+                                            value={project.technologiesText}
+                                            onChange={(event) => updateProject(project.localId, { technologiesText: event.target.value })}
+                                        />
+                                    </label>
+
+                                    <label className="text-xs font-bold uppercase text-slate-500 dark:text-slate-400 space-y-2 block">
+                                        <span>Link de deploy (opcional)</span>
+                                        <input
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-border-dark rounded dark:bg-background-dark dark:text-white"
+                                            value={project.deployUrl}
+                                            onChange={(event) => updateProject(project.localId, { deployUrl: event.target.value })}
+                                        />
+                                    </label>
+                                </article>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 <div className="flex items-center justify-between gap-4">
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Itens atuais: {parsedPreview.knownTechnologies.length} skills, {parsedPreview.experiences.length} experiências
+                        Itens atuais: {parsedPreview.knownTechnologies.length} skills derivadas de {parsedPreview.projects.length} projetos e {parsedPreview.experiences.length} experiências
                     </p>
                     <button
                         type="submit"

@@ -85,27 +85,67 @@ export async function POST(request: Request) {
 
         const extracted = extractResumeDataFromText(parsedPdf.text ?? '');
 
-        const updatedProfile = await prisma.userProfile.update({
+        await prisma.$transaction(async (transaction) => {
+            const profile = await transaction.userProfile.findUnique({
+                where: { userId: session.user.id },
+                select: { id: true },
+            });
+
+            if (!profile) {
+                throw new Error('Perfil não encontrado para salvar o currículo.');
+            }
+
+            await transaction.userProject.deleteMany({
+                where: { userProfileId: profile.id },
+            });
+
+            if (extracted.projects.length > 0) {
+                await transaction.userProject.createMany({
+                    data: extracted.projects.map((project) => ({
+                        userProfileId: profile.id,
+                        title: project.title,
+                        shortDescription: project.shortDescription,
+                        technologies: project.technologies,
+                        deployUrl: project.deployUrl,
+                    })),
+                });
+            }
+
+            await transaction.userProfile.update({
+                where: { userId: session.user.id },
+                data: {
+                    fullName: extracted.fullName ?? existingProfile.fullName ?? session.user.name ?? session.user.email,
+                    linkedinUrl: extracted.linkedinUrl ?? existingProfile.linkedinUrl,
+                    githubUrl: extracted.githubUrl ?? existingProfile.githubUrl,
+                    city: extracted.city ?? existingProfile.city,
+                    professionalSummary: extracted.professionalSummary ?? existingProfile.professionalSummary,
+                    experiences: extracted.experiences.length > 0 ? extracted.experiences : existingProfile.experiences,
+                    knownTechnologies: extracted.knownTechnologies,
+                    certifications: extracted.certifications.length > 0
+                        ? extracted.certifications
+                        : existingProfile.certifications,
+                    languages: extracted.languages.length > 0 ? extracted.languages : existingProfile.languages,
+                    resumeFileName: file.name,
+                    resumeSyncStatus: 'READY',
+                    resumeUploadedAt: new Date(),
+                },
+            });
+        });
+
+        const updatedProfile = await prisma.userProfile.findUnique({
             where: { userId: session.user.id },
-            data: {
-                fullName: extracted.fullName ?? existingProfile.fullName ?? session.user.name ?? session.user.email,
-                linkedinUrl: extracted.linkedinUrl ?? existingProfile.linkedinUrl,
-                githubUrl: extracted.githubUrl ?? existingProfile.githubUrl,
-                city: extracted.city ?? existingProfile.city,
-                professionalSummary: extracted.professionalSummary ?? existingProfile.professionalSummary,
-                experiences: extracted.experiences.length > 0 ? extracted.experiences : existingProfile.experiences,
-                knownTechnologies: extracted.knownTechnologies.length > 0
-                    ? extracted.knownTechnologies
-                    : existingProfile.knownTechnologies,
-                certifications: extracted.certifications.length > 0
-                    ? extracted.certifications
-                    : existingProfile.certifications,
-                languages: extracted.languages.length > 0 ? extracted.languages : existingProfile.languages,
-                resumeFileName: file.name,
-                resumeSyncStatus: 'READY',
-                resumeUploadedAt: new Date(),
+            include: {
+                projects: {
+                    orderBy: {
+                        createdAt: 'asc',
+                    },
+                },
             },
         });
+
+        if (!updatedProfile) {
+            throw new Error('Perfil não encontrado após processamento de currículo.');
+        }
 
         return NextResponse.json({
             message: 'Currículo processado com sucesso.',

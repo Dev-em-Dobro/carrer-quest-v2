@@ -39,6 +39,12 @@ export type ExtractedResumeData = {
     professionalSummary: string | null;
     experiences: string[];
     knownTechnologies: string[];
+    projects: {
+        title: string;
+        shortDescription: string | null;
+        technologies: string[];
+        deployUrl: string | null;
+    }[];
     certifications: string[];
     languages: string[];
 };
@@ -109,6 +115,123 @@ function extractKnownTechnologies(text: string) {
     );
 }
 
+function normalizeTechnologyToken(token: string) {
+    const cleaned = normalizeLine(token)
+        .replaceAll(/[()]/g, '')
+        .replaceAll(/\s+/g, ' ')
+        .toLowerCase();
+
+    const aliases: Record<string, string> = {
+        'node.js': 'node',
+        'node js': 'node',
+        'next.js': 'next',
+        'next js': 'next',
+        'tailwind css': 'tailwind',
+        'html5': 'html',
+        'css3': 'css',
+        'javascript es6': 'javascript',
+        'javascript es 6': 'javascript',
+    };
+
+    const fromAlias = aliases[cleaned];
+    if (fromAlias) {
+        return fromAlias;
+    }
+
+    return cleaned;
+}
+
+function extractProjects(lines: string[]) {
+    const projectSectionIndex = lines.findIndex((line) => /^projetos\b/i.test(line));
+    if (projectSectionIndex < 0) {
+        return [];
+    }
+
+    const stopSectionRegex = /^(stacks?\s+conhecidas|skills?|habilidades|forma[cç][aã]o|idiomas?|certifica[cç][aã]o|certifica[cç][oõ]es)\b/i;
+
+    const projectLines: string[] = [];
+    for (let index = projectSectionIndex + 1; index < lines.length; index += 1) {
+        const currentLine = normalizeLine(lines[index]).replace(/^[-•]\s*/, '');
+
+        if (!currentLine || /^--\s*\d+\s*of\s*\d+\s*--$/i.test(currentLine)) {
+            continue;
+        }
+
+        if (stopSectionRegex.test(currentLine)) {
+            break;
+        }
+
+        projectLines.push(currentLine);
+    }
+
+    const projects: {
+        title: string;
+        shortDescription: string | null;
+        technologies: string[];
+        deployUrl: string | null;
+    }[] = [];
+
+    let currentTitle: string | null = null;
+    let currentDescriptionParts: string[] = [];
+    let currentTechnologies: string[] = [];
+
+    const flushProject = () => {
+        if (!currentTitle) {
+            return;
+        }
+
+        const shortDescription = currentDescriptionParts.length > 0 ? currentDescriptionParts.join(' ') : null;
+        const normalizedTechnologies = uniqueList(currentTechnologies.map(normalizeTechnologyToken));
+        const fallbackTechnologies = normalizedTechnologies.length > 0
+            ? normalizedTechnologies
+            : extractKnownTechnologies(`${currentTitle} ${shortDescription ?? ''}`);
+
+        projects.push({
+            title: currentTitle,
+            shortDescription,
+            technologies: fallbackTechnologies,
+            deployUrl: null,
+        });
+
+        currentTitle = null;
+        currentDescriptionParts = [];
+        currentTechnologies = [];
+    };
+
+    for (const line of projectLines) {
+        const techLineMatch = /^tech\s*stacks?\s*:\s*(.+)$/i.exec(line);
+
+        if (techLineMatch) {
+            currentTechnologies = techLineMatch[1]
+                .split(',')
+                .map((item) => normalizeTechnologyToken(item))
+                .filter(Boolean);
+            continue;
+        }
+
+        if (!currentTitle) {
+            currentTitle = line;
+            continue;
+        }
+
+        if (currentTechnologies.length > 0) {
+            flushProject();
+            currentTitle = line;
+            continue;
+        }
+
+        currentDescriptionParts.push(line);
+    }
+
+    flushProject();
+
+    return projects;
+}
+
+function deriveKnownTechnologiesFromProjects(projects: { technologies: string[] }[]) {
+    return uniqueList(projects.flatMap((project) => project.technologies).map(normalizeTechnologyToken));
+}
+
 function extractLanguages(text: string, sectionValues: string[]) {
     const normalizedText = text.toLowerCase();
     const fromText = LANGUAGE_DICTIONARY.filter((language) => normalizedText.includes(language));
@@ -175,6 +298,7 @@ export function extractResumeDataFromText(rawText: string): ExtractedResumeData 
     const experienceLines = pickSection(lines, [/^experi[eê]ncia\b/i, /^experi[eê]ncias\b/i], 8);
     const certificationLines = pickSection(lines, [/^certifica[cç][aã]o\b/i, /^certifica[cç][oõ]es\b/i], 8);
     const languageSectionLines = pickSection(lines, [/^idioma\b/i, /^idiomas\b/i, /^languages\b/i], 6);
+    const projects = extractProjects(lines);
 
     return {
         fullName: pickFullName(lines),
@@ -183,7 +307,10 @@ export function extractResumeDataFromText(rawText: string): ExtractedResumeData 
         city: extractCity(lines),
         professionalSummary: summaryLines.length > 0 ? summaryLines.join(' ') : null,
         experiences: uniqueList(experienceLines),
-        knownTechnologies: extractKnownTechnologies(rawText),
+        knownTechnologies: projects.length > 0
+            ? deriveKnownTechnologiesFromProjects(projects)
+            : [],
+        projects,
         certifications: uniqueList(certificationLines),
         languages: extractLanguages(rawText, languageSectionLines),
     };

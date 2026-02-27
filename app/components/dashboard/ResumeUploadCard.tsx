@@ -4,12 +4,17 @@ import { useState } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 
 export default function ResumeUploadCard() {
-    const { user, refreshProfile } = useAuth();
+    const { user, isAuthenticated, refreshProfile } = useAuth();
     const [fileName, setFileName] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
 
     async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+        if (!isAuthenticated) {
+            setMessage('Sua sessão expirou. Faça login novamente para enviar o currículo.');
+            return;
+        }
+
         const selectedFile = event.target.files?.[0];
         if (!selectedFile) {
             return;
@@ -30,9 +35,15 @@ export default function ResumeUploadCard() {
             const response = await fetch('/api/profile/resume', {
                 method: 'POST',
                 body,
+                credentials: 'include',
             });
 
             const payload = (await response.json()) as { message?: string; error?: string };
+
+            if (response.status === 401) {
+                setMessage('Sessão inválida ou expirada. Entre novamente para continuar.');
+                return;
+            }
 
             if (!response.ok) {
                 setMessage(payload.error ?? 'Falha ao processar currículo.');
@@ -62,13 +73,13 @@ export default function ResumeUploadCard() {
         <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark p-5 shadow-sm rounded-xl">
             <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Currículo e Skills
+                    Currículo e Projetos
                 </h2>
                 <span className="material-symbols-outlined text-primary text-xl">upload_file</span>
             </div>
 
             <p className="text-sm text-slate-600 dark:text-slate-300">
-                Envie seu currículo para alimentar automaticamente as skills do perfil.
+                Envie seu currículo para extrair projetos e derivar automaticamente as skills do perfil.
             </p>
 
             <div className="mt-4">
@@ -78,7 +89,7 @@ export default function ResumeUploadCard() {
                         type="file"
                         accept="application/pdf"
                         className="hidden"
-                        disabled={isUploading}
+                        disabled={isUploading || !isAuthenticated}
                         onChange={handleFileChange}
                     />
                 </label>
@@ -86,6 +97,7 @@ export default function ResumeUploadCard() {
 
             <div className="mt-4 text-xs text-slate-500 dark:text-slate-400 space-y-1">
                 <p>Status da sincronização: <span className="font-bold">{statusLabel}</span></p>
+                {!isAuthenticated && <p>Faça login para habilitar o upload de currículo.</p>}
                 {fileName && <p>Arquivo selecionado: <span className="font-bold">{fileName}</span></p>}
                 {message && <p>{message}</p>}
             </div>
