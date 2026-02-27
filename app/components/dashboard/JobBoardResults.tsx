@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import type { JobListItem } from '@/app/lib/jobs/types';
 import { useAuth } from '@/app/providers/AuthProvider';
@@ -71,9 +71,9 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
     const [workModelFilter, setWorkModelFilter] = useState<WorkModelFilter>('all');
     const [currentPage, setCurrentPage] = useState(1);
 
-    useEffect(() => {
+    const resetPage = useCallback(() => {
         setCurrentPage(1);
-    }, [searchValue, sortMode, levelFilter, workModelFilter]);
+    }, []);
 
     const filteredAndSortedJobs = useMemo(() => {
         const query = normalize(searchValue);
@@ -97,15 +97,24 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
         });
 
         const sorted = [...filtered].sort((left, right) => {
+            if (sortMode === 'newest') {
+                const createdDiff = right.createdAt.getTime() - left.createdAt.getTime();
+                if (createdDiff !== 0) {
+                    return createdDiff;
+                }
+
+                const publishedDiff = (right.publishedAt ?? right.createdAt).getTime()
+                    - (left.publishedAt ?? left.createdAt).getTime();
+                if (publishedDiff !== 0) {
+                    return publishedDiff;
+                }
+
+                return right.title.localeCompare(left.title);
+            }
+
             const levelDiff = levelPriority[left.level] - levelPriority[right.level];
             if (levelDiff !== 0) {
                 return levelDiff;
-            }
-
-            if (sortMode === 'newest') {
-                const leftDate = left.publishedAt ?? left.createdAt;
-                const rightDate = right.publishedAt ?? right.createdAt;
-                return rightDate.getTime() - leftDate.getTime();
             }
 
             if (sortMode === 'salary') {
@@ -140,10 +149,22 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
     return (
         <div className="space-y-6">
             <SearchFilterBar
-                onSearchChange={setSearchValue}
-                onLevelChange={(value) => setLevelFilter((value as LevelFilter) || 'all')}
-                onWorkModelChange={(value) => setWorkModelFilter((value as WorkModelFilter) || 'all')}
-                onSortChange={(value) => setSortMode((value as SortMode) || 'relevant')}
+                onSearchChange={(value) => {
+                    setSearchValue(value);
+                    resetPage();
+                }}
+                onLevelChange={(value) => {
+                    setLevelFilter((value as LevelFilter) || 'all');
+                    resetPage();
+                }}
+                onWorkModelChange={(value) => {
+                    setWorkModelFilter((value as WorkModelFilter) || 'all');
+                    resetPage();
+                }}
+                onSortChange={(value) => {
+                    setSortMode((value as SortMode) || 'relevant');
+                    resetPage();
+                }}
             />
 
             {filteredAndSortedJobs.length > 0 ? (
