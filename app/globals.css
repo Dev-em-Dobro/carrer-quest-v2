@@ -75,6 +75,34 @@
         color: rgb(88 204 2 / 0.8);
     }
 
+    .ring-primary\/30 {
+        --tw-ring-color: rgb(88 204 2 / 0.3);
+    }
+
+    .hover\:ring-primary:hover {
+        --tw-ring-color: var(--color-primary);
+    }
+
+    .hover\:border-primary\/40:hover {
+        border-color: rgb(88 204 2 / 0.4);
+    }
+
+    .hover\:border-primary\/60:hover {
+        border-color: rgb(88 204 2 / 0.6);
+    }
+
+    .hover\:border-primary\/30:hover {
+        border-color: rgb(88 204 2 / 0.3);
+    }
+
+    .shadow-primary\/5 {
+        --tw-shadow-color: rgb(88 204 2 / 0.05);
+    }
+
+    .shadow-primary\/20 {
+        --tw-shadow-color: rgb(88 204 2 / 0.2);
+    }
+
     .focus\:ring-primary:focus {
         --tw-ring-color: var(--color-primary);
     }
