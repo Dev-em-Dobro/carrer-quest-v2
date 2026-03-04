@@ -86,11 +86,11 @@ export default function CuratedJobCard({ job }: Readonly<CuratedJobCardProps>) {
             {/* Top row: title + badges */}
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-150">
+                    <div className="flex items-start gap-2">
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors duration-150 line-clamp-2 min-w-0">
                             {job.title}
                         </h3>
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${levelColor[job.level]}`}>
+                        <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${levelColor[job.level]}`}>
                             {levelLabel[job.level].toUpperCase()}
                         </span>
                     </div>

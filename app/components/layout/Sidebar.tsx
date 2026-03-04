@@ -40,7 +40,7 @@ export default function Sidebar() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-5 space-y-1">
+            <nav className="flex-1 pl-3 pr-0 py-5 space-y-1">
                 {NAV_ITEMS.map((item) => {
                     const isActive = item.href === '/'
                         ? pathname === '/'
@@ -51,9 +51,9 @@ export default function Sidebar() {
                         <Link
                             key={item.label}
                             href={item.href}
-                            className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-150 group ${isActive
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark hover:text-slate-900 dark:hover:text-white'
+                            className={`flex items-center gap-3 pl-3 pr-3 py-2.5 text-sm font-medium transition-all duration-150 group ${isActive
+                                ? 'rounded-l-lg bg-emerald-50 dark:bg-emerald-900/20 text-primary border-r-2 border-primary'
+                                : 'rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-surface-dark hover:text-slate-900 dark:hover:text-white'
                                 }`}
                         >
                             <span
@@ -64,9 +64,6 @@ export default function Sidebar() {
                                 {icon}
                             </span>
                             <span>{item.label}</span>
-                            {isActive && (
-                                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-                            )}
                         </Link>
                     );
                 })}
@@ -76,6 +73,7 @@ export default function Sidebar() {
             <div className="p-4 border-t border-border-light dark:border-border-dark">
                 <div className="flex items-center gap-3">
                     {user.avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                             alt={`${user.name} Avatar`}
                             className="h-9 w-9 rounded-lg object-cover"
