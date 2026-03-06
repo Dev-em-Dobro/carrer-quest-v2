@@ -213,7 +213,7 @@ export default function CuratedJobCard({ job }: Readonly<CuratedJobCardProps>) {
                 <button
                     type="button"
                     onClick={handleApplyClick}
-                    className="px-5 py-2 bg-primary hover:bg-primary/90 active:scale-95 text-white text-xs font-bold rounded-lg uppercase tracking-wide transition-all duration-150 shadow-sm shadow-primary/20"
+                    className="cursor-pointer px-5 py-2 bg-primary hover:bg-primary/90 active:scale-95 text-white text-xs font-bold rounded-lg uppercase tracking-wide transition-all duration-150 shadow-sm shadow-primary/20"
                 >
                     Candidatar
                 </button>

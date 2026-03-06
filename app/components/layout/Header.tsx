@@ -23,27 +23,6 @@ export default function Header({ title = 'Overview' }: Readonly<HeaderProps>) {
             <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
 
             <div className="flex items-center gap-2">
-                {/* Notifications */}
-                <button
-                    type="button"
-                    className="relative p-2 rounded-lg text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-all duration-150"
-                    aria-label="Notificações"
-                >
-                    <span className="material-symbols-outlined text-xl">notifications</span>
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark" />
-                </button>
-
-                {/* Settings */}
-                <button
-                    type="button"
-                    className="p-2 rounded-lg text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-surface-dark transition-all duration-150"
-                    aria-label="Configurações"
-                >
-                    <span className="material-symbols-outlined text-xl">settings</span>
-                </button>
-
-                {/* Divider */}
-                <div className="w-px h-6 bg-border-light dark:bg-border-dark mx-1" />
 
                 {/* Avatar */}
                 {user.avatar ? (

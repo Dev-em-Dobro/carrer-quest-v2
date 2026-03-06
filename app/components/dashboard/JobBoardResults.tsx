@@ -189,7 +189,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
                                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                                 disabled={activePage <= 1}
                             >
@@ -203,7 +203,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
 
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
                                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                                 disabled={activePage >= totalPages}
                             >
