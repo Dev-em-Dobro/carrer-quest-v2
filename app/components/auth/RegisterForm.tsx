@@ -35,18 +35,43 @@ export default function RegisterForm() {
 
     const onSubmit = handleSubmit(async (values: SignUpInput) => {
         setAuthError(null);
+
+        const expectedEmail = values.email.trim().toLowerCase();
+
+        await authClient.signOut();
+
         const { error } = await authClient.signUp.email({
             name: values.name,
             email: values.email,
             password: values.password,
             callbackURL: "/",
         });
+
         if (error) {
             setAuthError("Não foi possível criar sua conta. Verifique os dados e tente novamente.");
             return;
         }
-        router.push("/");
-        router.refresh();
+
+        const sessionResult = await authClient.getSession();
+        const currentEmail = sessionResult.data?.user?.email?.trim().toLowerCase() ?? "";
+
+        if (currentEmail !== expectedEmail) {
+            const signInResult = await authClient.signIn.email({
+                email: values.email,
+                password: values.password,
+                rememberMe: true,
+                callbackURL: "/",
+            });
+
+            if (signInResult.error) {
+                setAuthError("Conta criada, mas não foi possível autenticar automaticamente. Faça login com a nova conta.");
+                router.replace("/login");
+                router.refresh();
+                return;
+            }
+        }
+
+        globalThis.window.location.replace("/");
     });
 
     const handleSocial = async (provider: "google" | "linkedin") => {
@@ -156,13 +181,13 @@ export default function RegisterForm() {
                     </label>
                     <div className="relative">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-[18px] pointer-events-none">
-                            lock_check
+                            lock
                         </span>
                         <input
                             id="confirmPassword"
                             type="password"
                             autoComplete="new-password"
-                            placeholder="Repita a senha"
+                            placeholder="Repita sua senha"
                             className="w-full rounded-lg border border-border-dark bg-surface-dark pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-600 outline-none focus:border-primary focus:ring-1 focus:ring-primary/40 transition-all"
                             {...register("confirmPassword")}
                         />

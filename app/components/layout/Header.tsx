@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { authClient } from '@/app/lib/auth-client';
@@ -29,9 +29,32 @@ function getInitials(name: string) {
         .toUpperCase();
 }
 
+async function clearClientAuthState() {
+    if (globalThis.window === undefined) {
+        return;
+    }
+
+    try {
+        sessionStorage.clear();
+    } catch {
+        // noop
+    }
+
+    try {
+        localStorage.removeItem('better-auth');
+        localStorage.removeItem('better-auth.session');
+    } catch {
+        // noop
+    }
+
+    if ('caches' in globalThis.window) {
+        const keys = await globalThis.window.caches.keys();
+        await Promise.all(keys.map((key) => globalThis.window.caches.delete(key)));
+    }
+}
+
 export default function Header({ title = 'Overview' }: Readonly<HeaderProps>) {
     const { user } = useAuth();
-    const router = useRouter();
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
     const [loggingOut, setLoggingOut] = useState(false);
@@ -55,9 +78,12 @@ export default function Header({ title = 'Overview' }: Readonly<HeaderProps>) {
 
     async function handleLogout() {
         setLoggingOut(true);
-        await authClient.signOut();
-        router.push('/login');
-        router.refresh();
+        try {
+            await authClient.signOut();
+        } finally {
+            await clearClientAuthState();
+            globalThis.window.location.replace('/login');
+        }
     }
 
     return (
