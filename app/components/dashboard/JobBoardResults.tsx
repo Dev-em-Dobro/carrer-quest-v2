@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import type { JobListItem } from '@/app/lib/jobs/types';
+import { inferStackFromTitle } from '@/app/lib/jobs/normalizers';
 import { useAuth } from '@/app/providers/AuthProvider';
 import CuratedJobCard from '@/app/components/dashboard/CuratedJobCard';
 import SearchFilterBar from '@/app/components/dashboard/SearchFilterBar';
@@ -52,9 +53,16 @@ function detectWorkModel(job: JobListItem): Exclude<WorkModelFilter, 'all'> {
 }
 
 function calculateJobFit(job: JobListItem, knownTechnologies: string[]) {
-    const requiredSkills = job.stack.map(normalize);
+    const stackSkills = job.stack.map(normalize).filter(Boolean);
+
+    // Se stack está vazio, tenta inferir skills do título
+    const requiredSkills = stackSkills.length > 0
+        ? stackSkills
+        : inferStackFromTitle(job.title);
+
+    // Sem nenhuma informação de requisitos — fica no fim do ranking
     if (requiredSkills.length === 0) {
-        return 100;
+        return -1;
     }
 
     const known = new Set(knownTechnologies.map(normalize));
@@ -181,7 +189,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
                                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                                 disabled={activePage <= 1}
                             >
@@ -195,7 +203,7 @@ export default function JobBoardResults({ jobs }: Readonly<JobBoardResultsProps>
 
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+                                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-background-dark text-slate-700 dark:text-slate-200 hover:border-primary/60 hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
                                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                                 disabled={activePage >= totalPages}
                             >
