@@ -23,7 +23,12 @@ export async function GET() {
         email: session.user.email,
     });
 
-    return NextResponse.json({ profile: toClientProfile(profile) });
+    return NextResponse.json({
+        profile: {
+            ...toClientProfile(profile),
+            isOfficialStudent: Boolean(profile.user?.officialStudentVerifiedAt),
+        },
+    });
 }
 
 export async function HEAD() {

@@ -4,6 +4,7 @@ export const mockUserProfile: UserProfile = {
     name: 'Alex Dev',
     email: '',
     role: 'Full Stack Engineer',
+    isOfficialStudent: false,
     avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBcSyUADoPGLK0vgpOrW00IVWh1SctBQBC62CK54Uvmdxv-40nStawQ-52sY4nNgJ66UqYOmJ0SgKp5TTAIMI6mW2FVVSybyvXjUzomqch7x1fMKd7eVcZXsBRE9UMhyE1jiSJ7a5MQ2iwtr5nbxRQlUyKzd3aAv4vkXnGgCBrDe4vqsUS_f73QvF8SEDYSHBs1b8ZcEKm2nVKBYhdGxjw0qA8-LALzizLHyWlFVV2Jws1Ei7jzRF4dSFFKaa22jl0ToLhVJ2T0WTU',
     level: 4,
     levelName: 'Senior',
