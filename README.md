@@ -1,6 +1,6 @@
 # CareerQuest (MVP)
 
-Hub de oportunidades para estudantes e iniciantes em tecnologia, com foco em vagas de entrada (estágio/júnior), análise de aderência por skills e ingestão automática de vagas.
+Hub de oportunidades para estudantes e iniciantes em tecnologia, com foco em vagas de entrada (estágio/júnior), análise de aderência por skills, ingestão automática de vagas e jornada guiada de evolução do aluno.
 
 ## Stack
 
@@ -13,37 +13,62 @@ Hub de oportunidades para estudantes e iniciantes em tecnologia, com foco em vag
 ## Funcionalidades implementadas
 
 - Autenticação:
-	- login/cadastro com email/senha
-	- login social (Google/LinkedIn, quando configurado)
+    - login/cadastro com email/senha
+    - login social (Google/LinkedIn, quando configurado)
+    - fluxo de acesso para aluno oficial via validação em API externa (`/acesso`)
 - Dashboard e perfil:
-	- upload de currículo em PDF
-	- extração de dados para preencher perfil
-	- status de aptidão e gap de skills
+    - upload de currículo em PDF
+    - extração de dados para preencher perfil
+    - status de aptidão e gap de skills
+    - tooltip explicativo de "vagas avaliáveis" (diferença entre total da página e total avaliável)
 - Job Board:
-	- listagem de vagas com filtros
-	- modelo de trabalho (remoto/híbrido/presencial)
-	- paginação e ordenação
+    - listagem de vagas com filtros
+    - modelo de trabalho (remoto/híbrido/presencial)
+    - paginação e ordenação
 - Ingestão de vagas:
-	- conectores Gupy, Remotive, RemoteOK, ProgramaThor, Trampos e Adzuna
-	- deduplicação por fingerprint
-	- bootstrap protegido por segredo
-	- endpoint de webhook para automação externa (n8n/Make)
+    - conectores Gupy, Remotive, RemoteOK, ProgramaThor, Trampos e Adzuna
+    - deduplicação por fingerprint
+    - bootstrap protegido por segredo
+    - endpoint de webhook para automação externa (n8n/Make)
 - LGPD (MVP):
-	- exportação de dados de perfil
-	- limpeza de dados pessoais do perfil
+    - exportação de dados de perfil
+    - limpeza de dados pessoais do perfil
+- Jornada do aluno (novo):
+    - board de ranks de `I` a `S`
+    - progressão e tarefas persistidas por usuário
+    - status salvo em banco por tarefa concluída
+    - edição restrita ao Rank I (controle de rollout)
+    - acesso permitido apenas para aluno oficial
+    - usabilidade do board melhorada com snap scroll, drag, setas e scroll lateral
 - Telas MVP adicionais:
-	- `/assessments`
-	- `/analytics`
+    - `/assessments`
+    - `/analytics`
+
+## Novidades desde a última atualização do README
+
+- Persistência da jornada no banco:
+    - novo modelo `UserJornadaTaskProgress`
+    - API dedicada: `GET/PATCH /api/jornada`
+- Aluno oficial como fonte de verdade no banco:
+    - novo campo `User.officialStudentVerifiedAt`
+    - preenchido no fluxo de criação via `/api/auth/student-access`
+- Controle de acesso da jornada:
+    - rota `/jornada` protegida para aluno oficial
+    - item de menu "Jornada do aluno" oculto no sidebar para não oficiais
+- Build fix:
+    - `mockUserProfile` atualizado com `isOfficialStudent`
 
 ## Estrutura de rotas principais
 
 - `/` Dashboard
 - `/jobs` Job Board
+- `/jornada` Jornada do aluno
 - `/perfil` Perfil
 - `/assessments` Skill Assessments
 - `/analytics` Analytics
 - `/login` Login
 - `/cadastro` Cadastro
+- `/acesso` Entrada de aluno oficial
 
 ## Setup local
 
@@ -61,6 +86,19 @@ DATABASE_URL="postgresql://..."
 BETTER_AUTH_SECRET="segredo-forte"
 BETTER_AUTH_URL="http://localhost:3000"
 NEXT_PUBLIC_BETTER_AUTH_URL="http://localhost:3000"
+
+# Validação de aluno oficial (obrigatório para /acesso)
+USER_API_BASE_URL="https://sua-api-externa"
+AUTHORIZATION_TOKEN="token-da-api-externa"
+API_KEY_HEADER="api-key-da-api-externa"
+
+# SMTP (obrigatório para envio da senha no fluxo /acesso)
+# Pode usar SMTP_* ou RESEND_SMTP_*
+SMTP_HOST="smtp.seu-provedor.com"
+SMTP_PORT="465"
+SMTP_USER="usuario"
+SMTP_PASS="senha"
+SMTP_FROM="CareerQuest <no-reply@seudominio.com>"
 
 JOBS_BOOTSTRAP_SECRET="seu-segredo-bootstrap"
 CRON_SECRET="seu-segredo-cron"
@@ -102,6 +140,12 @@ npm run dev
 
 ## Comandos úteis
 
+- Validar build de produção:
+
+```bash
+npm run build
+```
+
 - Rodar bootstrap de vagas via API local:
 
 ```bash
@@ -137,3 +181,4 @@ lsof -nP -iTCP:3000 -sTCP:LISTEN
 - `docs/jobs-scraping-implementation.md` — pipeline de ingestão
 - `docs/jobs-webhook-contract.md` — contrato do webhook
 - `docs/lgpd-operations.md` — operações LGPD MVP
+- `docs/local-email-testing.md` — testes de e-mail em ambiente local
