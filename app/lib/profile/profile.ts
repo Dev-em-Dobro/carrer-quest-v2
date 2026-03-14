@@ -89,6 +89,11 @@ export async function getOrCreateUserProfile(user: SessionUser) {
             resumeSyncStatus: 'NOT_UPLOADED',
         },
         include: {
+            user: {
+                select: {
+                    officialStudentVerifiedAt: true,
+                },
+            },
             projects: {
                 orderBy: {
                     createdAt: 'asc',

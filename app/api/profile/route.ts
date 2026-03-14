@@ -23,15 +23,10 @@ export async function GET() {
         email: session.user.email,
     });
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { officialStudentVerifiedAt: true },
-    });
-
     return NextResponse.json({
         profile: {
             ...toClientProfile(profile),
-            isOfficialStudent: Boolean(user?.officialStudentVerifiedAt),
+            isOfficialStudent: Boolean(profile.user?.officialStudentVerifiedAt),
         },
     });
 }

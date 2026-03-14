@@ -57,7 +57,6 @@ export default function JornadaBoard({ stages, tasks, editableStageId }: Readonl
         setRequestError(null);
 
         const nextDone = targetTask.status !== 'done';
-        const previousTasks = boardTasks;
 
         setBoardTasks((current) => current.map((task) => {
             if (task.id !== taskId) {
@@ -89,8 +88,18 @@ export default function JornadaBoard({ stages, tasks, editableStageId }: Readonl
                 setBoardTasks(data.tasks);
             }
         } catch {
-            setBoardTasks(previousTasks);
-            setRequestError('Nao foi possivel salvar o progresso agora. Tente novamente.');
+            // Reverte apenas a tarefa que falhou, evitando sobrescrever updates concorrentes.
+            setBoardTasks((current) => current.map((task) => {
+                if (task.id !== taskId) {
+                    return task;
+                }
+
+                return {
+                    ...task,
+                    status: targetTask.status,
+                };
+            }));
+            setRequestError('Não foi possível salvar o progresso agora. Tente novamente.');
         } finally {
             setUpdatingTaskIds((current) => {
                 const next = { ...current };

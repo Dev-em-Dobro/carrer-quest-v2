@@ -1,5 +1,6 @@
 'use client';
 
+import { useId, useState } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 import type { JobListItem } from '@/app/lib/jobs/types';
 
@@ -16,6 +17,8 @@ type JobFit = {
 
 export default function CandidacyReadinessCard({ jobs }: Readonly<CandidacyReadinessCardProps>) {
     const { user } = useAuth();
+    const tooltipId = useId();
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false);
     const normalize = (value: string) => value.toLowerCase().trim();
     const normalizedKnownTech = new Set(user.knownTechnologies.map(normalize));
     const hasSkills = normalizedKnownTech.size > 0;
@@ -68,7 +71,7 @@ export default function CandidacyReadinessCard({ jobs }: Readonly<CandidacyReadi
     const avgFit = hasSkills && jobFitAnalysis.length > 0
         ? Math.round(jobFitAnalysis.reduce((sum, job) => sum + job.fitPercentage, 0) / jobFitAnalysis.length)
         : 0;
-    const evaluableJobsInfoText = `Total da pagina = vagas com stack + vagas sem stack (${evaluableJobs.length} + ${nonEvaluableJobsCount} = ${totalJobs}). Total do card de aptidao = apenas vagas com stack (${evaluableJobs.length}). Portanto, os numeros diferentes sao esperados pela logica atual.`;
+    const evaluableJobsInfoText = `Total da página = vagas com stack + vagas sem stack (${evaluableJobs.length} + ${nonEvaluableJobsCount} = ${totalJobs}). Total do card de aptidão = apenas vagas com stack (${evaluableJobs.length}). Portanto, os números diferentes são esperados pela lógica atual.`;
 
     return (
         <div className="bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-xl p-5 hover:border-amber-500/30 dark:hover:border-amber-500/30 transition-colors">
@@ -94,10 +97,16 @@ export default function CandidacyReadinessCard({ jobs }: Readonly<CandidacyReadi
                             <div className="mt-1 flex items-start gap-2">
                                 <p className="text-sm text-slate-400 dark:text-slate-300">{statusText}</p>
                                 {totalJobs > 0 && (
-                                    <div className="relative group">
+                                    <div className="relative">
                                         <button
                                             type="button"
-                                            aria-label="Entender calculo de vagas avaliaveis"
+                                            aria-label="Entender cálculo de vagas avaliáveis"
+                                            aria-describedby={tooltipId}
+                                            aria-expanded={isTooltipOpen}
+                                            onMouseEnter={() => setIsTooltipOpen(true)}
+                                            onMouseLeave={() => setIsTooltipOpen(false)}
+                                            onFocus={() => setIsTooltipOpen(true)}
+                                            onBlur={() => setIsTooltipOpen(false)}
                                             className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-border-light dark:border-border-dark bg-white/5 text-slate-400 transition-colors hover:text-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
                                         >
                                             <span
@@ -110,8 +119,9 @@ export default function CandidacyReadinessCard({ jobs }: Readonly<CandidacyReadi
                                         </button>
 
                                         <div
+                                            id={tooltipId}
                                             role="tooltip"
-                                            className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg border border-amber-500/30 bg-surface-dark px-3 py-2 text-xs leading-relaxed text-slate-200 opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+                                            className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-72 -translate-x-1/2 rounded-lg border border-amber-500/30 bg-surface-dark px-3 py-2 text-xs leading-relaxed text-slate-200 shadow-lg transition-opacity ${isTooltipOpen ? 'opacity-100' : 'opacity-0'}`}
                                         >
                                             {evaluableJobsInfoText}
                                         </div>
